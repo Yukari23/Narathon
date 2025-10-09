@@ -124,7 +124,7 @@ export default function AdminProfile() {
         <Link href="/" className={styles.backLink}>
           <FaArrowLeft /> กลับหน้าหลัก
         </Link>
-        <h1 className={styles.title}>⚙️ ตั้งค่าแอดมิน</h1>
+        <h1 className={styles.title}>⚙️ ตั้งค่าโปรไฟล์แอดมิน</h1>
       </div>
 
       <div className={styles.card}>
