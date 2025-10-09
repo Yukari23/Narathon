@@ -1,0 +1,140 @@
+/* /styles/Login/VerifyOTP.module.css */
+:root {
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --text: #0f172a;
+  --muted: #64748b;
+  --primary-600: #3b82f6;
+  --primary-700: #2563eb;
+  --success-600: #16a34a;
+  --danger-600: #dc2626;
+  --border: #e2e8f0;
+}
+
+.pageWrapper {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+  padding: 24px;
+}
+
+.container {
+  width: 100%;
+  max-width: 480px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 10px 30px rgba(2, 6, 23, 0.06);
+}
+
+.title {
+  margin: 0 0 8px;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.subtitle {
+  margin: 0 0 20px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.form {
+  display: grid;
+  gap: 14px;
+}
+
+.inputGroup {
+  position: relative;
+}
+
+.inputIcon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.7;
+}
+
+.input {
+  width: 100%;
+  padding: 12px 14px 12px 38px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  font-size: 16px;
+  outline: none;
+  background: #fff;
+}
+
+.input:focus {
+  border-color: var(--primary-600);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  background: var(--primary-600);
+  color: #fff;
+  font-weight: 600;
+  transition: transform 0.02s ease, background 0.2s ease, opacity 0.2s ease;
+}
+
+.button:hover {
+  background: var(--primary-700);
+}
+
+.loading {
+  opacity: 0.8;
+  cursor: progress;
+}
+
+.message {
+  margin: 6px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+}
+
+.success {
+  color: var(--success-600);
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.error {
+  color: var(--danger-600);
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.footer {
+  margin-top: 18px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.link {
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.link:hover {
+  color: var(--primary-600);
+  text-decoration: underline;
+}

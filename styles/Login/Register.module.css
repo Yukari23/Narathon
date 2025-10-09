@@ -1,0 +1,182 @@
+/* =============================== */
+/* พื้นหลังและเลย์เอาต์ของหน้าทั้งหมด */
+.pageWrapper {
+  background: linear-gradient(135deg, var(--primary-700), var(--primary-100));
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* =============================== */
+/* กล่องฟอร์มหลัก */
+.container {
+  max-width: 420px;
+  width: 90%;
+  margin: var(--spacing-xl) auto;
+  background: linear-gradient(135deg, var(--background), var(--primary-50));
+  padding: var(--spacing-2xl);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-lg);
+  font-family: 'Kanit', -apple-system, BlinkMacSystemFont, sans-serif;
+  border: 1px solid var(--border-light);
+}
+
+/* =============================== */
+/* ไอคอนหัวข้อ (เช่น ไอคอนสมัครสมาชิก) */
+.iconHeader {
+  display: flex; /* จัดวางแนวนอน */
+  justify-content: center; /* จัดให้อยู่ตรงกลางแนวนอน */
+  align-items: center; /* จัดให้อยู่ตรงกลางแนวตั้ง */
+  margin-bottom: 1.5rem; /* เว้นระยะด้านล่าง */
+  animation: floatIcon 3s ease-in-out infinite; /* ใช้แอนิเมชัน floatIcon ให้ขยับขึ้นลง */
+}
+
+/* กำหนด keyframes สำหรับแอนิเมชันลอยขึ้นลง */
+@keyframes floatIcon {
+  0% { transform: translateY(0px); }      /* เริ่มต้นอยู่ที่ตำแหน่งเดิม */
+  50% { transform: translateY(-10px); }  /* ขยับขึ้นไป 10px */
+  100% { transform: translateY(0px); }   /* กลับมาตำแหน่งเดิม */
+}
+
+.iconHeader svg {
+  filter: drop-shadow(0 4px 6px rgba(59, 130, 246, 0.2)); /* เพิ่มเงาให้ไอคอนดูนูน */
+}
+
+/* =============================== */
+/* หัวข้อและคำอธิบายใต้หัวข้อ */
+.title {
+  font-size: 2.2rem; /* ขนาดตัวอักษรใหญ่ */
+  font-weight: 700; /* ตัวหนา */
+  text-align: center; /* จัดกลาง */
+  color: #1e293b; /* สีเทาเข้ม */
+  margin-bottom: 0.75rem; /* เว้นระยะด้านล่าง */
+}
+.subtitle {
+  font-size: 1.15rem; /* ขนาดตัวอักษร */
+  text-align: center; /* จัดกลาง */
+  margin-bottom: 2rem; /* เว้นระยะด้านล่าง */
+  color: #475569; /* สีเทาอ่อน */
+  font-weight: 500;
+}
+
+/* =============================== */
+/* ฟอร์มและ input */
+.form {
+  display: flex; /* ใช้ flexbox จัดวางแนวตั้ง */
+  flex-direction: column; /* เรียงแนวตั้ง */
+  gap: 1.5rem; /* ระยะห่างระหว่าง input */
+}
+.inputWrapper, .passwordWrapper {
+  position: relative; /* สำหรับวางไอคอนใน input */
+  width: 100%; /* กว้างเต็มบรรทัด */
+}
+.inputIcon {
+  position: absolute; /* วางไอคอนซ้อนใน input */
+  left: 16px; /* ห่างจากซ้าย 16px */
+  top: 50%; /* กึ่งกลางแนวตั้ง */
+  transform: translateY(-50%); /* ขยับขึ้นครึ่งหนึ่งของความสูงตัวเอง */
+  color: #64748b; /* สีไอคอน */
+  font-size: 1.2rem; /* ขนาดไอคอน */
+  pointer-events: none; /* ไม่ให้คลิกที่ไอคอน */
+}
+.input {
+  width: 100%; /* กว้างเต็มบรรทัด */
+  padding: 0.875rem 1rem 0.875rem 3rem; /* padding ซ้ายเผื่อไอคอน */
+  border: 2px solid #e2e8f0; /* เส้นขอบสีเทาอ่อน */
+  border-radius: 10px; /* มุมโค้งมน */
+  font-size: 1.05rem; /* ขนาดตัวอักษร */
+  background: rgba(255,255,255,0.9); /* สีพื้นหลังขาวโปร่งใส */
+  color: #1e293b; /* สีตัวอักษร */
+  font-family: 'Kanit', sans-serif; /* ฟอนต์ */
+  font-weight: 500;
+}
+.input:focus {
+  outline: none; /* ไม่แสดงเส้นขอบ browser */
+  border-color: #3b82f6; /* เปลี่ยนสีขอบเมื่อโฟกัส */
+  background: rgba(255,255,255,0.95); /* ขาวขึ้นเมื่อโฟกัส */
+}
+.input::placeholder {
+  color: #64748b; /* สี placeholder */
+  opacity: 0.9; /* ความโปร่งใส */
+  font-weight: 400;
+}
+.eyeIcon {
+  position: absolute; /* วางปุ่มไอคอนขวาใน input */
+  right: 16px; /* ห่างจากขวา 16px */
+  top: 50%; /* กึ่งกลางแนวตั้ง */
+  transform: translateY(-50%); /* ขยับขึ้นครึ่งหนึ่งของความสูงตัวเอง */
+  background: none; /* ไม่มีพื้นหลัง */
+  border: none; /* ไม่มีขอบ */
+  color: #64748b; /* สีไอคอน */
+  cursor: pointer; /* เปลี่ยนเป็นรูปมือเมื่อ hover */
+  padding: 8px; /* ขนาดพื้นที่คลิก */
+  border-radius: 8px; /* มุมโค้งมน */
+}
+.eyeIcon:hover {
+  color: #3b82f6; /* เปลี่ยนสีเมื่อ hover */
+  background: rgba(59,130,246,0.1); /* เพิ่มพื้นหลังฟ้าอ่อนเมื่อ hover */
+}
+
+/* =============================== */
+/* ปุ่มสมัครสมาชิก */
+.button {
+  background: linear-gradient(135deg, #3b82f6, #2563eb); /* ไล่สีฟ้าเข้ม-น้ำเงิน */
+  color: white; /* ตัวอักษรขาว */
+  padding: 0.875rem; /* ขนาดปุ่ม */
+  font-size: 1.1rem; /* ขนาดตัวอักษร */
+  font-weight: 500; /* ตัวหนา */
+  border: none; /* ไม่มีขอบ */
+  border-radius: 10px; /* มุมโค้งมน */
+  cursor: pointer; /* เปลี่ยนเป็นรูปมือเมื่อ hover */
+  display: flex; /* วางไอคอนกับข้อความแนวนอน */
+  align-items: center; /* จัดกลางแนวตั้ง */
+  justify-content: center; /* จัดกลางแนวนอน */
+  gap: 0.75rem; /* ระยะห่างไอคอนกับข้อความ */
+}
+.buttonIcon {
+  font-size: 1.25rem; /* ขนาดไอคอนในปุ่ม */
+}
+
+/* =============================== */
+/* ฟุตเตอร์ลิงก์เข้าสู่ระบบ */
+.footer {
+  display: flex; /* วางแนวนอน */
+  justify-content: center; /* จัดกลางแนวนอน */
+  align-items: center; /* จัดกลางแนวตั้ง */
+  margin-top: 2rem; /* เว้นระยะด้านบน */
+  font-size: 1rem; /* ขนาดตัวอักษร */
+  color: #475569; /* สีเทาเข้ม */
+  gap: 1rem; /* ระยะห่างลิงก์ */
+}
+.footer a {
+  color: #3b82f6; /* สีลิงก์ฟ้า */
+  text-decoration: none; /* ไม่มีขีดเส้นใต้ */
+  font-weight: 500; /* ตัวหนา */
+  padding: 4px 8px; /* ขนาดพื้นที่คลิก */
+  border-radius: 6px; /* มุมโค้งมน */
+}
+.footer a:hover {
+  color: #2563eb; /* สีฟ้าเข้มเมื่อ hover */
+  background: rgba(59,130,246,0.1); /* พื้นหลังฟ้าอ่อนเมื่อ hover */
+}
+
+.popupOverlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.popup {
+  background: #9aeee1;
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 0 20px rgba(0,0,0,0.2);
+  font-size: 1.2rem;
+  text-align: center;
+}
