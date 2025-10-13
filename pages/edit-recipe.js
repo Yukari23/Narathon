@@ -35,7 +35,7 @@ export default function EditRecipe() {
         const res = await fetch('/api/diseases');
         const data = await res.json();
         if (res.ok) setDiseases(data.diseases || []);
-      } catch {}
+      } catch { }
     };
     loadDiseases();
   }, []);
@@ -51,10 +51,10 @@ export default function EditRecipe() {
       setLoading(true);
       const response = await fetch(`/api/recipes/${id}`);
       const data = await response.json();
-      
+
       if (response.ok && data.recipe) {
         const recipe = data.recipe;
-        
+
         // แปลงข้อมูลจากฐานข้อมูล - ใช้ parseList function เหมือนหน้าดูสูตร
         const parseList = (v) => {
           if (v == null) return [];
@@ -143,8 +143,8 @@ export default function EditRecipe() {
     { id: 'dinner', name: 'มื้อเย็น', icon: <MdNightsStay />, color: '#DDD6FE' }
   ];
 
-  const handleImageChange = (e) => {   
-    const file = e.target.files[0];  
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -208,14 +208,14 @@ export default function EditRecipe() {
       const formData = new FormData();
 
       console.log('Recipe data before sending:', recipeData);
-      
+
       // ส่งข้อมูลทั้งหมด - ใช้ค่าจริงหรือค่าว่าง
       const recipeName = recipeData.title || '';
       const recipeDetails = recipeData.description || '';
       const selectedMeal = recipeData.selectedMeals[0] || '';
       const recipeMethod = JSON.stringify(recipeData.steps || ['']);
       const recipeIngredients = JSON.stringify(recipeData.ingredients || ['']);
-      
+
       const selectedDiseaseId = recipeData.selectedDiseases[0];
       const selectedDisease = diseases.find(d => d.id === selectedDiseaseId);
       const diseaseTags = selectedDisease ? selectedDisease.name : '';
@@ -228,7 +228,7 @@ export default function EditRecipe() {
       formData.append('raw_material', recipeIngredients);
       formData.append('Disease_tags', diseaseTags);
       formData.append('Disease_code', diseaseCode);
-      
+
       console.log('Prepared data:');
       console.log('- Recipe_name:', recipeName);
       console.log('- details:', recipeDetails);
@@ -247,7 +247,7 @@ export default function EditRecipe() {
       for (let [key, value] of formData.entries()) {
         console.log(key, ':', value);
       }
-      
+
       // Debug: ตรวจสอบข้อมูลสำคัญ
       console.log('Key data checks:');
       console.log('Recipe_name:', recipeData.title, 'Type:', typeof recipeData.title);
@@ -267,7 +267,7 @@ export default function EditRecipe() {
 
       const text = await response.text();
       console.log('Response text:', text);
-      
+
       let data;
       try {
         data = JSON.parse(text);
@@ -451,9 +451,8 @@ export default function EditRecipe() {
                 <button
                   key={disease.id}
                   type="button"
-                  className={`${styles.tagButton} ${
-                    recipeData.selectedDiseases.includes(disease.id) ? styles.tagSelected : ''
-                  }`}
+                  className={`${styles.tagButton} ${recipeData.selectedDiseases.includes(disease.id) ? styles.tagSelected : ''
+                    }`}
                   style={{
                     backgroundColor: recipeData.selectedDiseases.includes(disease.id)
                       ? getDiseaseColor(disease.id)
@@ -491,7 +490,7 @@ export default function EditRecipe() {
                     } else {
                       alert(data.message || 'เพิ่มแท็กโรคล้มเหลว');
                     }
-                  } catch {}
+                  } catch { }
                 }}
                 className={styles.addButton}
               >

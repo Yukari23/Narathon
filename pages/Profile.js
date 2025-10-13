@@ -39,7 +39,7 @@ export default function AdminProfilePage() {
     (async () => {
       try {
         const res = await fetch(`/api/admin/profile?email=${encodeURIComponent(email)}`, { signal: ctrl.signal });
-        if (!res.ok) throw new Error((await res.json().catch(()=>({}))).error || `HTTP ${res.status}`);
+        if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `HTTP ${res.status}`);
         const data = await res.json();
         setProfile(data.profile);
       } catch (e) {
@@ -73,7 +73,7 @@ export default function AdminProfilePage() {
 
       <div className={styles.card}>
         <div className={styles.avatarWrap}>
-          <Image src={profile.image || '/images/default-avatar.png'} alt="admin-avatar" width={140} height={140} className={styles.avatar}/>
+          <Image src={profile.image || '/images/default-avatar.png'} alt="admin-avatar" width={140} height={140} className={styles.avatar} />
         </div>
 
         <div className={styles.info}>

@@ -172,15 +172,15 @@ export default function AddRecipe() {
     <div className={styles.pageWrapper}>
       <div className={styles.container}>
         <div className={styles.topBar}>
-  <button type="button" className={styles.backButton} onClick={() => router.back()}>
-    <span>←</span> ย้อนกลับ
-  </button>
+          <button type="button" className={styles.backButton} onClick={() => router.back()}>
+            <span>←</span> ย้อนกลับ
+          </button>
 
-  <h1 className={styles.title}>เพิ่มสูตรอาหาร</h1>
+          <h1 className={styles.title}>เพิ่มสูตรอาหาร</h1>
 
-  {/* ช่องว่างถ่วงน้ำหนักฝั่งขวา เพื่อให้หัวข้อกลางจริง */}
-  <div className={styles.topBarRight} aria-hidden="true" />
-</div>
+          {/* ช่องว่างถ่วงน้ำหนักฝั่งขวา เพื่อให้หัวข้อกลางจริง */}
+          <div className={styles.topBarRight} aria-hidden="true" />
+        </div>
 
 
         <form onSubmit={handleSubmit} className={styles.form}>
@@ -280,9 +280,8 @@ export default function AddRecipe() {
                 <button
                   key={disease.id}
                   type="button"
-                  className={`${styles.tagButton} ${
-                    recipeData.selectedDiseases.includes(disease.id) ? styles.tagSelected : ''
-                  }`}
+                  className={`${styles.tagButton} ${recipeData.selectedDiseases.includes(disease.id) ? styles.tagSelected : ''
+                    }`}
                   style={{
                     backgroundColor: recipeData.selectedDiseases.includes(disease.id)
                       ? getDiseaseColor(disease.id)
@@ -340,9 +339,8 @@ export default function AddRecipe() {
                 <button
                   key={meal.id}
                   type="button"
-                  className={`${styles.tagButton} ${
-                    recipeData.selectedMeals.includes(meal.id) ? styles.tagSelected : ''
-                  }`}
+                  className={`${styles.tagButton} ${recipeData.selectedMeals.includes(meal.id) ? styles.tagSelected : ''
+                    }`}
                   style={{
                     backgroundColor: recipeData.selectedMeals.includes(meal.id)
                       ? meal.color
