@@ -803,18 +803,18 @@ export default function AdminDashboard() {
                             ))}
                           </div>
                         )}
-                        <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span style={{
-                            padding: '0.25rem 0.5rem',
-                            borderRadius: 'var(--radius-sm)',
-                            fontSize: '0.8rem',
-                            fontWeight: '600',
-                            background: user.otp === 'DISABLED' ? 'var(--error-100)' : 'var(--success-100)',
-                            color: user.otp === 'DISABLED' ? 'var(--error-700)' : 'var(--success-700)'
-                          }}>
-                            {user.otp === 'DISABLED' ? 'ปิดใช้งาน' : 'ใช้งานปกติ'}
-                          </span>
-                        </div>
+                        {/* <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}> */}
+                          {/* <span style={{ */}
+                          {/*   // padding: '0.25rem 0.5rem', */}
+                          {/*   // borderRadius: 'var(--radius-sm)', */}
+                          {/*   // fontSize: '0.8rem', */}
+                          {/*   // fontWeight: '600', */}
+                          {/*   // background: user.otp === 'DISABLED' ? 'var(--error-100)' : 'var(--success-100)', */}
+                          {/*   // color: user.otp === 'DISABLED' ? 'var(--error-700)' : 'var(--success-700)' */}
+                          {/* // }}> */}
+                          {/*   {user.otp === 'DISABLED' ? 'ปิดใช้งาน' : 'ใช้งานปกติ'}  */}
+                          {/* </span> */}
+                        {/* </div> */}
                         {user.comment && (
                           <p style={{ margin: '0.5rem 0 0 0', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                             หมายเหตุ: {user.comment}
@@ -1193,14 +1193,14 @@ export default function AdminDashboard() {
                 />
               </div>
               <div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '600' }}>
-                  <input
-                    type="checkbox"
-                    checked={editingUser.isActive}
-                    onChange={(e) => setEditingUser({ ...editingUser, isActive: e.target.checked })}
-                  />
-                  เปิดใช้งานบัญชี
-                </label>
+              {/*   <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '600' }}> */}
+              {/*     <input */}
+              {/*       type="checkbox" */}
+              {/*       checked={editingUser.isActive} */}
+              {/*       onChange={(e) => setEditingUser({ ...editingUser, isActive: e.target.checked })} */}
+              {/*     /> */}
+              {/*     เปิดใช้งานบัญชี */}
+              {/*   </label> */}
               </div>
               <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                 <button type="submit" className={styles.submitButton} style={{ margin: 0, flex: 1 }}>

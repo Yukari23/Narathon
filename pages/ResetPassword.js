@@ -110,7 +110,7 @@ export default function ResetPasswordPage() {
               aria-label="toggle-password"
               disabled={loading}
             >
-              {showPw ? <FaEyeSlash /> : <FaEye />}
+             
             </button>
             <input
               type={showPw ? 'text' : 'password'}
@@ -140,7 +140,7 @@ export default function ResetPasswordPage() {
               aria-label="toggle-confirm-password"
               disabled={loading}
             >
-              {showPw2 ? <FaEyeSlash /> : <FaEye />}
+            
             </button>
             <input
               type={showPw2 ? 'text' : 'password'}
