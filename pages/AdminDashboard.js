@@ -20,23 +20,33 @@ import {
   FaTimes,
   FaUser,
   FaEnvelope,
-  FaHome // ✅ เพิ่มไอคอน Home
+  FaHome
 } from 'react-icons/fa'
 
 export default function AdminDashboard() {
   const router = useRouter()
   const [adminInfo, setAdminInfo] = useState(null)
+
+  // ✅ เก็บสถิติรวมจาก /api/admin-stats (รวม diseaseStats จากหน้าโปรไฟล์)
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalRecipes: 0,
     totalBookmarks: 0,
-    totalComments: 0
+    totalComments: 0,
+    growthRates: null,
+    recent: { users: [], recipes: [], comments: [] },
+    diseaseStatsFromProfiles: [],   // ✅ ใหม่
+    diseaseSource: ''               // ✅ ใหม่
   })
+
+  // สถิติ/ข้อมูลเดิมที่คำนวณจาก recipes ตรง ๆ (คงไว้)
   const [diseaseStats, setDiseaseStats] = useState([])
   const [mealStats, setMealStats] = useState([])
+
   const [users, setUsers] = useState([])
   const [recipes, setRecipes] = useState([])
   const [diseases, setDiseases] = useState([])
+
   const [activeTab, setActiveTab] = useState('overview')
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
@@ -78,7 +88,7 @@ export default function AdminDashboard() {
     try {
       setLoading(true);
       
-      // Load admin info and statistics in parallel
+      // โหลดข้อมูลหลัก
       const [adminRes, statsRes, usersRes, recipesRes, diseasesRes] = await Promise.all([
         fetch('/api/admin'),
         fetch('/api/admin-stats'),
@@ -93,20 +103,16 @@ export default function AdminDashboard() {
       const recipesData = await recipesRes.json()
       const diseasesData = await diseasesRes.json()
       
-      
       setAdminInfo(adminData.admin)
       setUsers(usersData.users || [])
       setRecipes(recipesData.recipes || [])
       setDiseases(diseasesData.diseases || [])
-      
-      // Debug: Log recipes data
-      console.log('Loaded recipes:', recipesData.recipes || [])
-      
-      // Calculate disease and meal statistics
+
+      // คำนวณสถิติจาก recipes ภายในเครื่อง (คงไว้ตามเดิม)
       calculateDiseaseStats(recipesData.recipes || [], diseasesData.diseases || [])
       calculateMealStats(recipesData.recipes || [])
-      
-      // Use stats from admin-stats API
+
+      // ✅ ใช้สถิติรวมจาก /api/admin-stats (รวม diseaseStats จาก "หน้าโปรไฟล์")
       if (statsData.stats) {
         setStats({
           totalUsers: statsData.stats.totalUsers,
@@ -114,16 +120,21 @@ export default function AdminDashboard() {
           totalBookmarks: statsData.stats.totalBookmarks,
           totalComments: statsData.stats.totalComments,
           growthRates: statsData.stats.growthRates,
-          recent: statsData.stats.recent
+          recent: statsData.stats.recent,
+          diseaseStatsFromProfiles: statsData.stats.diseaseStats || [], // ✅ ใช้ค่านี้
+          diseaseSource: statsData.stats.diseaseSource || ''            // ✅ source
         })
       } else {
-        // Fallback to basic stats
-        setStats({
+        // Fallback
+        setStats(prev => ({
+          ...prev,
           totalUsers: usersData.users?.length || 0,
           totalRecipes: recipesData.recipes?.length || 0,
           totalBookmarks: 0,
-          totalComments: 0
-        })
+          totalComments: 0,
+          diseaseStatsFromProfiles: [],
+          diseaseSource: ''
+        }))
       }
       
     } catch (error) {
@@ -134,40 +145,33 @@ export default function AdminDashboard() {
     }
   }
 
+  // ====== Utilities / Calculations ======
   const calculateDiseaseStats = (recipes, diseases) => {
     const diseaseCount = {}
-    
-    // Count recipes by disease
     recipes.forEach(recipe => {
       if (recipe.Disease_code) {
         const diseaseId = recipe.Disease_code
         diseaseCount[diseaseId] = (diseaseCount[diseaseId] || 0) + 1
       }
     })
-    
-    // Map to disease names
-    const diseaseStats = diseases.map(disease => ({
-      id: disease.id,
-      name: disease.name,
-      count: diseaseCount[disease.id] || 0
+    const diseaseStats = diseases.map(d => ({
+      id: d.id,
+      name: d.name,
+      count: diseaseCount[d.id] || 0
     })).sort((a, b) => b.count - a.count)
-    
     setDiseaseStats(diseaseStats)
   }
 
-  // Function to get meal name from meal value
   const getMealName = (mealValue) => {
     if (!mealValue) return null
-    
     const mealMap = {
       '1': 'มื้อเช้า',
-      '2': 'มื้อกลางวัน', 
+      '2': 'มื้อกลางวัน',
       '3': 'มื้อเย็น',
       'breakfast': 'มื้อเช้า',
       'lunch': 'มื้อกลางวัน',
       'dinner': 'มื้อเย็น'
     }
-    
     return mealMap[mealValue] || null
   }
 
@@ -180,96 +184,75 @@ export default function AdminDashboard() {
       'lunch': { name: 'มื้อกลางวัน', count: 0 },
       'dinner': { name: 'มื้อเย็น', count: 0 }
     }
-    
-    console.log('Recipes for meal calculation:', recipes) // Debug log
-    
-    // Count recipes by meal
     recipes.forEach(recipe => {
-      console.log(`Recipe: ${recipe.Recipe_name}, Meal: ${recipe.Meal}, Type: ${typeof recipe.Meal}`) // Debug log
-      
-      // Handle different data types for Meal field
       let mealValue = recipe.Meal
-      if (mealValue === null || mealValue === undefined) {
-        return // Skip recipes without meal data
-      }
-      
-      // Convert to string if it's a number
-      if (typeof mealValue === 'number') {
-        mealValue = mealValue.toString()
-      }
-      
-      // Check if meal value exists in our mealCount object
+      if (mealValue === null || mealValue === undefined) return
+      if (typeof mealValue === 'number') mealValue = mealValue.toString()
       if (mealValue && mealCount[mealValue]) {
         mealCount[mealValue].count++
-        console.log(`Incremented count for meal ${mealValue}`) // Debug log
-      } else {
-        console.log(`Unknown meal value: ${mealValue}`) // Debug log
       }
     })
-    
-    // Combine counts for same meal types (1/breakfast, 2/lunch, 3/dinner)
     const combinedMealCount = {
       '1': { name: 'มื้อเช้า', count: mealCount['1'].count + mealCount['breakfast'].count },
       '2': { name: 'มื้อกลางวัน', count: mealCount['2'].count + mealCount['lunch'].count },
       '3': { name: 'มื้อเย็น', count: mealCount['3'].count + mealCount['dinner'].count }
     }
-    
-    // Convert to array and sort by count
     const mealStats = Object.entries(combinedMealCount).map(([id, data]) => ({
-      id,
-      name: data.name,
-      count: data.count
+      id, name: data.name, count: data.count
     })).sort((a, b) => b.count - a.count)
-    
-    console.log('Calculated meal stats:', mealStats) // Debug log
     setMealStats(mealStats)
   }
 
+  // ✅ ใช้ diseases state เพื่อแปลงชื่อโรค -> id CSV (กัน error ใน handleUpdateRecipe)
+  const diseaseNamesToIdsCsv = (tagsStr) => {
+    if (!tagsStr) return ''
+    const names = String(tagsStr)
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean)
+      .map(s => s.toLowerCase())
+    const matchedIds = diseases
+      .filter(d => names.includes(String(d.name || '').toLowerCase()))
+      .map(d => d.id)
+    return matchedIds.join(',')
+  }
+
+  // ====== Actions ======
   const handleDeleteUser = async (email) => {
     if (!confirm('คุณแน่ใจหรือไม่ที่จะลบผู้ใช้นี้?')) return
-    
     try {
-      const response = await fetch(`/api/members?email=${email}`, {
-        method: 'DELETE'
-      })
-      
+      const response = await fetch(`/api/members?email=${email}`, { method: 'DELETE' })
       if (response.ok) {
-        setUsers(users.filter(user => user.email !== email))
-        setStats(prev => ({ ...prev, totalUsers: prev.totalUsers - 1 }))
+        setUsers(users.filter(u => u.email !== email))
+        setStats(prev => ({ ...prev, totalUsers: Math.max(0, prev.totalUsers - 1) }))
         alert('ลบผู้ใช้สำเร็จ')
       } else {
         alert('เกิดข้อผิดพลาดในการลบผู้ใช้')
       }
-    } catch (error) {
-      console.error('Error deleting user:', error)
+    } catch (e) {
+      console.error('Error deleting user:', e)
       alert('เกิดข้อผิดพลาดในการลบผู้ใช้')
     }
   }
 
   const handleDeleteRecipe = async (recipeId) => {
     if (!confirm('คุณแน่ใจหรือไม่ที่จะลบสูตรอาหารนี้?')) return
-    
     try {
-      const response = await fetch(`/api/recipes?id=${recipeId}`, {
-        method: 'DELETE'
-      })
-      
+      const response = await fetch(`/api/recipes?id=${recipeId}`, { method: 'DELETE' })
       if (response.ok) {
-        const updatedRecipes = recipes.filter(recipe => recipe.Recipe_code !== recipeId)
+        const updatedRecipes = recipes.filter(r => r.Recipe_code !== recipeId)
         setRecipes(updatedRecipes)
-        setStats(prev => ({ ...prev, totalRecipes: prev.totalRecipes - 1 }))
-        
-        // อัปเดตสถิติตามมื้อและโรคใหม่
+        setStats(prev => ({ ...prev, totalRecipes: Math.max(0, prev.totalRecipes - 1) }))
+        // อัปเดตสถิติภายใน
         calculateMealStats(updatedRecipes)
         calculateDiseaseStats(updatedRecipes, diseases)
-        
         alert('ลบสูตรอาหารสำเร็จ')
       } else {
         const errorData = await response.json()
         alert(errorData.message || 'เกิดข้อผิดพลาดในการลบสูตรอาหาร')
       }
-    } catch (error) {
-      console.error('Error deleting recipe:', error)
+    } catch (e) {
+      console.error('Error deleting recipe:', e)
       alert('เกิดข้อผิดพลาดในการลบสูตรอาหาร')
     }
   }
@@ -279,42 +262,30 @@ export default function AdminDashboard() {
     setShowEditModal(true)
   }
 
-    const handleUpdateRecipe = async (updatedRecipe) => {
+  const handleUpdateRecipe = async (updatedRecipe) => {
     try {
-    // ทำให้ DB มีทั้ง details/Disease_code ด้วย
-     const diseaseCodeCsv = diseaseNamesToIdsCsv(updatedRecipe.Disease_tags);
-
+      const diseaseCodeCsv = diseaseNamesToIdsCsv(updatedRecipe.Disease_tags)
       const response = await fetch('/api/recipes', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: updatedRecipe.Recipe_code,
           title: updatedRecipe.Recipe_name,
           description: updatedRecipe.Description,
-     details: updatedRecipe.Description,           // <- ให้ details = Description
+          details: updatedRecipe.Description,       // sync ไปที่ details
           image: updatedRecipe.Image,
           diseaseTags: updatedRecipe.Disease_tags,
-        diseaseCode: diseaseCodeCsv,                  // <- ส่ง Disease_code ด้วย (id,id)
+          diseaseCode: diseaseCodeCsv,              // ส่ง id CSV
           meal: updatedRecipe.Meal,
           ingredients: updatedRecipe.Ingredients,
           instructions: updatedRecipe.Instructions
         })
       })
-
-
       if (response.ok) {
-        // อัปเดตรายการสูตรอาหาร
-        const updatedRecipes = recipes.map(recipe => 
-          recipe.Recipe_code === updatedRecipe.Recipe_code ? updatedRecipe : recipe
-        )
-        setRecipes(updatedRecipes)
-        
-        // อัปเดตสถิติตามมื้อและโรคใหม่
-        calculateMealStats(updatedRecipes)
-        calculateDiseaseStats(updatedRecipes, diseases)
-        
+        const updated = recipes.map(r => r.Recipe_code === updatedRecipe.Recipe_code ? updatedRecipe : r)
+        setRecipes(updated)
+        calculateMealStats(updated)
+        calculateDiseaseStats(updated, diseases)
         setShowEditModal(false)
         setEditingRecipe(null)
         alert('อัปเดตสูตรอาหารสำเร็จ')
@@ -322,8 +293,8 @@ export default function AdminDashboard() {
         const errorData = await response.json()
         alert(errorData.message || 'เกิดข้อผิดพลาดในการอัปเดตสูตรอาหาร')
       }
-    } catch (error) {
-      console.error('Error updating recipe:', error)
+    } catch (e) {
+      console.error('Error updating recipe:', e)
       alert('เกิดข้อผิดพลาดในการอัปเดตสูตรอาหาร')
     }
   }
@@ -333,15 +304,12 @@ export default function AdminDashboard() {
     router.push('/Login')
   }
 
-  // Disease management functions
+  // ====== Disease CRUD ======
   const handleDiseaseSubmit = async (e) => {
     e.preventDefault()
-    
     try {
-      const url = editingDisease ? '/api/admin-diseases' : '/api/admin-diseases'
       const method = editingDisease ? 'PUT' : 'POST'
-      
-      const response = await fetch(url, {
+      const response = await fetch('/api/admin-diseases', {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -349,9 +317,7 @@ export default function AdminDashboard() {
           ...(editingDisease && { id: editingDisease.id })
         })
       })
-
       const data = await response.json()
-
       if (response.ok) {
         alert(data.message || 'บันทึกข้อมูลสำเร็จ')
         setDiseaseFormData({ name: '', color: '#94a3b8' })
@@ -361,8 +327,8 @@ export default function AdminDashboard() {
       } else {
         alert(data.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล')
       }
-    } catch (error) {
-      console.error('Error saving disease:', error)
+    } catch (e) {
+      console.error('Error saving disease:', e)
       alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์')
     }
   }
@@ -375,22 +341,17 @@ export default function AdminDashboard() {
 
   const handleDiseaseDelete = async (id) => {
     if (!confirm('คุณแน่ใจหรือไม่ที่จะลบโรคนี้?')) return
-
     try {
-      const response = await fetch(`/api/admin-diseases?id=${id}`, {
-        method: 'DELETE'
-      })
-
+      const response = await fetch(`/api/admin-diseases?id=${id}`, { method: 'DELETE' })
       const data = await response.json()
-
       if (response.ok) {
         alert(data.message || 'ลบโรคสำเร็จ')
         loadAdminData()
       } else {
         alert(data.message || 'เกิดข้อผิดพลาดในการลบโรค')
       }
-    } catch (error) {
-      console.error('Error deleting disease:', error)
+    } catch (e) {
+      console.error('Error deleting disease:', e)
       alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์')
     }
   }
@@ -401,12 +362,9 @@ export default function AdminDashboard() {
     setShowDiseaseForm(false)
   }
 
-  // User management functions
+  // ====== User edit ======
   const handleUserEdit = (user) => {
-    setEditingUser({
-      ...user,
-      isActive: user.otp !== 'DISABLED'
-    })
+    setEditingUser({ ...user, isActive: user.otp !== 'DISABLED' })
     setShowUserEditModal(true)
   }
 
@@ -423,9 +381,7 @@ export default function AdminDashboard() {
           isActive: updatedUser.isActive
         })
       })
-
       const data = await response.json()
-
       if (response.ok) {
         alert(data.message || 'อัปเดตข้อมูลผู้ใช้สำเร็จ')
         setShowUserEditModal(false)
@@ -434,54 +390,45 @@ export default function AdminDashboard() {
       } else {
         alert(data.message || 'เกิดข้อผิดพลาดในการอัปเดตผู้ใช้')
       }
-    } catch (error) {
-      console.error('Error updating user:', error)
+    } catch (e) {
+      console.error('Error updating user:', e)
       alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์')
     }
   }
 
   const handleUserDelete = async (email) => {
     if (!confirm('คุณแน่ใจหรือไม่ที่จะลบผู้ใช้นี้? การกระทำนี้จะลบข้อมูลทั้งหมดที่เกี่ยวข้อง')) return
-
     try {
-      const response = await fetch(`/api/admin-users?email=${email}`, {
-        method: 'DELETE'
-      })
-
+      const response = await fetch(`/api/admin-users?email=${email}`, { method: 'DELETE' })
       const data = await response.json()
-
       if (response.ok) {
         alert(data.message || 'ลบผู้ใช้สำเร็จ')
         loadAdminData()
       } else {
         alert(data.message || 'เกิดข้อผิดพลาดในการลบผู้ใช้')
       }
-    } catch (error) {
-      console.error('Error deleting user:', error)
+    } catch (e) {
+      console.error('Error deleting user:', e)
       alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์')
     }
   }
 
+  // ====== Filters ======
   const filteredUsers = users.filter(user => 
     user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   const filteredRecipes = recipes.filter((recipe) => {
-  const q = String(searchTerm || '').toLowerCase().trim();
-  if (!q) return true;
-
-  const byTitle      = String(recipe.Recipe_name || '').toLowerCase().includes(q);
-  const byDesc       = String(recipe.Description  || '').toLowerCase().includes(q);
-  const byDiseaseTag = String(recipe.Disease_tags || '').toLowerCase().includes(q);
-
-  // ค้นชื่อมื้อด้วย (เช่น มื้อเช้า/มื้อกลางวัน/มื้อเย็น)
-  const mealName     = getMealName(String(recipe.Meal));
-  const byMealName   = String(mealName || '').toLowerCase().includes(q);
-
-  return byTitle || byDesc || byDiseaseTag || byMealName;
-});
-
+    const q = String(searchTerm || '').toLowerCase().trim();
+    if (!q) return true;
+    const byTitle      = String(recipe.Recipe_name || '').toLowerCase().includes(q);
+    const byDesc       = String(recipe.Description  || '').toLowerCase().includes(q);
+    const byDiseaseTag = String(recipe.Disease_tags || '').toLowerCase().includes(q);
+    const mealName     = getMealName(String(recipe.Meal));
+    const byMealName   = String(mealName || '').toLowerCase().includes(q);
+    return byTitle || byDesc || byDiseaseTag || byMealName;
+  });
 
   const filteredDiseases = diseases.filter(disease => 
     disease.name?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -496,7 +443,6 @@ export default function AdminDashboard() {
     )
   }
 
-
   return (
     <div className={styles.container}>
       {/* Header */}
@@ -504,7 +450,6 @@ export default function AdminDashboard() {
         <div className={styles.headerContent}>
           <h1>Dashboard</h1>
           <div className={styles.adminInfo}>
-            {/* ✅ ปุ่มกลับหน้าหลัก */}
             <Link 
               href="/"
               className={styles.logoutBtn}
@@ -530,7 +475,7 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      {/* Navigation Tabs */}
+      {/* Tabs */}
       <nav className={styles.tabs}>
         <button 
           className={`${styles.tab} ${activeTab === 'overview' ? styles.active : ''}`}
@@ -558,24 +503,20 @@ export default function AdminDashboard() {
         </button>
       </nav>
 
-
-      {/* Main Content */}
+      {/* Main */}
       <main className={styles.main}>
-        {/* Overview Tab */}
+        {/* Overview */}
         {activeTab === 'overview' && (
           <div className={styles.overview}>
             <h2>ภาพรวมระบบ</h2>
+
+            {/* KPI cards */}
             <div className={styles.statsGrid}>
               <div className={styles.statCard}>
                 <FaUsers className={styles.statIcon} />
                 <div className={styles.statContent}>
                   <h3>{stats.totalUsers}</h3>
                   <p>ผู้ใช้ทั้งหมด</p>
-                  {stats.growthRates && (
-                    <span className={`${styles.growthRate} ${stats.growthRates.users >= 0 ? styles.positive : styles.negative}`}>
-                   
-                    </span>
-                  )}
                 </div>
               </div>
               <div className={styles.statCard}>
@@ -583,10 +524,6 @@ export default function AdminDashboard() {
                 <div className={styles.statContent}>
                   <h3>{stats.totalRecipes}</h3>
                   <p>สูตรอาหารทั้งหมด</p>
-                  {stats.growthRates && (
-                    <span className={`${styles.growthRate} ${stats.growthRates.recipes >= 0 ? styles.positive : styles.negative}`}>
-                    </span>
-                  )}
                 </div>
               </div>
               <div className={styles.statCard}>
@@ -594,10 +531,6 @@ export default function AdminDashboard() {
                 <div className={styles.statContent}>
                   <h3>{stats.totalBookmarks}</h3>
                   <p>บุ๊คมาร์คทั้งหมด</p>
-                  {stats.growthRates && (
-                    <span className={`${styles.growthRate} ${stats.growthRates.bookmarks >= 0 ? styles.positive : styles.negative}`}>
-                    </span>
-                  )}
                 </div>
               </div>
               <div className={styles.statCard}>
@@ -605,10 +538,6 @@ export default function AdminDashboard() {
                 <div className={styles.statContent}>
                   <h3>{stats.totalComments}</h3>
                   <p>ความคิดเห็นทั้งหมด</p>
-                  {stats.growthRates && (
-                    <span className={`${styles.growthRate} ${stats.growthRates.comments >= 0 ? styles.positive : styles.negative}`}>
-                    </span>
-                  )}
                 </div>
               </div>
             </div>
@@ -630,7 +559,7 @@ export default function AdminDashboard() {
                           style={{ 
                             width: `${diseaseStats.length > 0 ? (disease.count / Math.max(...diseaseStats.map(d => d.count))) * 100 : 0}%` 
                           }}
-                        ></div>
+                        />
                       </div>
                     </div>
                   ))}
@@ -655,12 +584,51 @@ export default function AdminDashboard() {
                           style={{ 
                             width: `${mealStats.length > 0 && Math.max(...mealStats.map(m => m.count)) > 0 ? (meal.count / Math.max(...mealStats.map(m => m.count))) * 100 : 0}%` 
                           }}
-                        ></div>
+                        />
                       </div>
                     </div>
                   ))}
                   {mealStats.length === 0 && (
                     <p className={styles.noData}>ไม่มีข้อมูลมื้ออาหาร</p>
+                  )}
+                </div>
+              </div>
+
+              {/* ✅ ใหม่: จำนวนสมาชิกตามโรคที่สนใจ (จากหน้าโปรไฟล์) */}
+              <div className={styles.statsSection}>
+                <h3>
+                  จำนวนสมาชิกตามโรคที่สนใจ
+                  {stats.diseaseSource && (
+                    <span className={styles.badge} style={{ marginLeft: 8 }}>
+                    
+                    </span>
+                  )}
+                </h3>
+                <div className={styles.statsList}>
+                  {stats.diseaseStatsFromProfiles?.length > 0 ? (
+                    stats.diseaseStatsFromProfiles.map((item, i) => {
+                      const max = Math.max(...stats.diseaseStatsFromProfiles.map(d => Number(d.member_count) || 0)) || 1
+                      const count = Number(item.member_count) || 0
+                      const percent = Math.round((count / max) * 100)
+                      return (
+                        <div key={i} className={styles.statItem}>
+                          <div className={styles.statItemContent}>
+                            <span className={styles.statItemName}>
+                              {item.disease_name || 'ไม่ระบุ'}
+                            </span>
+                            <span className={styles.statItemCount}>{count} คน</span>
+                          </div>
+                          <div className={styles.statItemBar}>
+                            <div
+                              className={styles.statItemProgress}
+                              style={{ width: `${percent}%` }}
+                            />
+                          </div>
+                        </div>
+                      )
+                    })
+                  ) : (
+                    <p className={styles.noData}>ไม่มีข้อมูลสมาชิกตามโรค</p>
                   )}
                 </div>
               </div>
@@ -749,7 +717,6 @@ export default function AdminDashboard() {
               </div>
             </div>
             
-            {/* Users List */}
             <div style={{ display: 'grid', gap: '1rem' }}>
               {filteredUsers.map((user) => (
                 <div key={user.email} className={styles.statCard}>
@@ -803,18 +770,6 @@ export default function AdminDashboard() {
                             ))}
                           </div>
                         )}
-                        {/* <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}> */}
-                          {/* <span style={{ */}
-                          {/*   // padding: '0.25rem 0.5rem', */}
-                          {/*   // borderRadius: 'var(--radius-sm)', */}
-                          {/*   // fontSize: '0.8rem', */}
-                          {/*   // fontWeight: '600', */}
-                          {/*   // background: user.otp === 'DISABLED' ? 'var(--error-100)' : 'var(--success-100)', */}
-                          {/*   // color: user.otp === 'DISABLED' ? 'var(--error-700)' : 'var(--success-700)' */}
-                          {/* // }}> */}
-                          {/*   {user.otp === 'DISABLED' ? 'ปิดใช้งาน' : 'ใช้งานปกติ'}  */}
-                          {/* </span> */}
-                        {/* </div> */}
                         {user.comment && (
                           <p style={{ margin: '0.5rem 0 0 0', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                             หมายเหตุ: {user.comment}
@@ -878,7 +833,6 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Add/Edit Disease Form */}
             {showDiseaseForm && (
               <div className={styles.statCard} style={{ marginBottom: '2rem' }}>
                 <h3 style={{ marginBottom: '1rem', color: 'var(--text-primary)' }}>
@@ -915,7 +869,6 @@ export default function AdminDashboard() {
               </div>
             )}
 
-            {/* Diseases List */}
             <div style={{ display: 'grid', gap: '1rem' }}>
               {filteredDiseases.map((disease) => (
                 <div key={disease.id} className={styles.statCard}>
@@ -964,20 +917,6 @@ export default function AdminDashboard() {
           <div className={styles.recipes}>
             <div className={styles.sectionHeader}>
               <h2>จัดการสูตรอาหาร</h2>
-              <div className={styles.headerActions}>
-                <Link href="/add-recipe" className={styles.addRecipeBtn}>
-                  <FaPlus /> เพิ่มสูตรอาหาร
-                </Link>
-                <div className={styles.searchBox}>
-                  <FaSearch className={styles.searchIcon} />
-                  <input
-                    type="text"
-                    placeholder="ค้นหาสูตรอาหาร..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-              </div>
             </div>
             
             <div className={styles.recipesGrid}>
@@ -1192,16 +1131,6 @@ export default function AdminDashboard() {
                   }}
                 />
               </div>
-              <div>
-              {/*   <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '600' }}> */}
-              {/*     <input */}
-              {/*       type="checkbox" */}
-              {/*       checked={editingUser.isActive} */}
-              {/*       onChange={(e) => setEditingUser({ ...editingUser, isActive: e.target.checked })} */}
-              {/*     /> */}
-              {/*     เปิดใช้งานบัญชี */}
-              {/*   </label> */}
-              </div>
               <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                 <button type="submit" className={styles.submitButton} style={{ margin: 0, flex: 1 }}>
                   บันทึก
@@ -1226,7 +1155,7 @@ export default function AdminDashboard() {
   )
 }
 
-// Edit Recipe Form Component
+// ====== Edit Recipe Form ======
 function EditRecipeForm({ recipe, onSave, onCancel }) {
   const [formData, setFormData] = useState({
     Recipe_name: recipe.Recipe_name || '',
@@ -1240,18 +1169,12 @@ function EditRecipeForm({ recipe, onSave, onCancel }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
+    setFormData(prev => ({ ...prev, [name]: value }))
   }
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    onSave({
-      ...recipe,
-      ...formData
-    })
+    onSave({ ...recipe, ...formData })
   }
 
   return (

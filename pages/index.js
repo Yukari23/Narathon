@@ -186,7 +186,7 @@ const getMealName = (key) => {
           <Link href="/" className={styles.brand}>
             <div className={styles.brandIcon}>🍽️</div>
             <div className={styles.brandText}>
-              <span className={styles.brandName}>Food<span>Care</span></span>
+              <span className={styles.brandName}>Healthy Recipe</span>
               <span className={styles.brandTagline}>สุขภาพดีเริ่มต้นที่อาหาร</span>
             </div>
           </Link>
@@ -410,7 +410,7 @@ const getMealName = (key) => {
       </section>
 
       <footer className={styles.footer}>
-        <p>© {new Date().getFullYear()} FoodCare — Healthy Recipe System</p>
+        <p>© {new Date().getFullYear()} Healthy Recipe System</p>
       </footer>
 
       {/* Disease Popup */}

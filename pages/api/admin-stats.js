@@ -1,13 +1,31 @@
 // /pages/api/admin-stats.js
-import pool from '../lib/db';
+
+// รองรับโปรเจ็กต์ที่ตำแหน่ง lib/db แตกต่างกัน (เช่นย้ายโฟลเดอร์)
+async function getPool() {
+  try {
+    const mod = await import('../lib/db');
+    return mod.default || mod;
+  } catch {
+    const mod2 = await import('../lib/db');
+    return mod2.default || mod2;
+  }
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
+  let pool;
   try {
-    // Get all statistics in parallel
+    pool = await getPool();
+  } catch (e) {
+    console.error('Cannot init DB pool:', e);
+    return res.status(500).json({ message: 'DB init error', error: e.message });
+  }
+
+  try {
+    // ===== ดึงสถิติโดยรวม + รายการล่าสุด (รันขนาน) =====
     const [
       [usersCount],
       [recipesCount],
@@ -17,54 +35,54 @@ export default async function handler(req, res) {
       [recentRecipes],
       [recentComments]
     ] = await Promise.all([
-      // Total users count
-      pool.execute('SELECT COUNT(*) as count FROM members'),
-      
-      // Total recipes count
-      pool.execute('SELECT COUNT(*) as count FROM recipes'),
-      
-      // Total bookmarks count
-      pool.execute('SELECT COUNT(*) as count FROM bookmarks'),
-      
-      // Total comments count
-      pool.execute('SELECT COUNT(*) as count FROM comments'),
-      
-      // Recent users - ไม่มี created_at column
+      // Total users
+      pool.execute('SELECT COUNT(*) AS count FROM members'),
+
+      // Total recipes
+      pool.execute('SELECT COUNT(*) AS count FROM recipes'),
+
+      // Total bookmarks
+      pool.execute('SELECT COUNT(*) AS count FROM bookmarks'),
+
+      // Total comments
+      pool.execute('SELECT COUNT(*) AS count FROM comments'),
+
+      // Recent users (ไม่มี created_at → ใช้อีเมลล่าสุดแทน)
       pool.execute(`
         SELECT 
-          First_name as name,
-          Email_member as email,
-          Image as image,
-          Disease_tags as diseaseTags,
+          First_name       AS name,
+          Email_member     AS email,
+          Image            AS image,
+          Disease_tags     AS diseaseTags,
           comment
-        FROM members 
+        FROM members
         ORDER BY Email_member DESC
         LIMIT 5
       `),
-      
-      // Recent recipes - ใช้ details แทน Description
+
+      // Recent recipes (ใช้ details แทน description)
       pool.execute(`
-        SELECT 
-          Recipe_code as id,
-          Recipe_name as title,
-          Image as image,
-          details as description,
-          Disease_tags as diseaseTags,
-          Meal as meal
-        FROM recipes 
+        SELECT
+          Recipe_code      AS id,
+          Recipe_name      AS title,
+          Image            AS image,
+          details          AS description,
+          Disease_tags     AS diseaseTags,
+          Meal             AS meal
+        FROM recipes
         ORDER BY Recipe_code DESC
         LIMIT 5
       `),
-      
-      // Recent comments (last 7 days)
+
+      // Recent comments (7 วันล่าสุด)
       pool.execute(`
-        SELECT 
-          c.Comment_ID as id,
-          c.Comment_content as body,
-          c.Recipe_code as recipeId,
-          c.Member_email as memberEmail,
-          c.Date as date,
-          r.Recipe_name as recipeTitle
+        SELECT
+          c.Comment_ID      AS id,
+          c.Comment_content AS body,
+          c.Recipe_code     AS recipeId,
+          c.Member_email    AS memberEmail,
+          c.Date            AS date,
+          r.Recipe_name     AS recipeTitle
         FROM comments c
         LEFT JOIN recipes r ON r.Recipe_code = c.Recipe_code
         WHERE c.Date >= DATE_SUB(NOW(), INTERVAL 7 DAY)
@@ -73,81 +91,86 @@ export default async function handler(req, res) {
       `)
     ]);
 
-    // Process recent users data
-    const processedRecentUsers = recentUsers.map(user => ({
-      name: user.name,
-      email: user.email,
-      image: user.image || '/images/GF3.jpg',
-      diseaseTags: user.diseaseTags ? user.diseaseTags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
-      comment: user.comment || ''
+    // ===== แปลงข้อมูล recent users =====
+    const processedRecentUsers = recentUsers.map(u => ({
+      name: u.name || 'ไม่ระบุชื่อ',
+      email: u.email,
+      image: u.image || '/images/GF3.jpg',
+      diseaseTags: u.diseaseTags
+        ? String(u.diseaseTags).split(',').map(t => t.trim()).filter(Boolean)
+        : [],
+      comment: u.comment || ''
     }));
 
-    // Process recent recipes data
-    const processedRecentRecipes = recentRecipes.map(recipe => ({
-      id: recipe.id,
-      title: recipe.title,
-      image: recipe.image || '/images/GF3.jpg',
-      description: recipe.description || '',
-      diseaseTags: recipe.diseaseTags ? recipe.diseaseTags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
-      meal: recipe.meal
+    // ===== แปลงข้อมูล recent recipes =====
+    const processedRecentRecipes = recentRecipes.map(r => ({
+      id: r.id,
+      title: r.title,
+      image: r.image || '/images/GF3.jpg',
+      description: r.description || '',
+      diseaseTags: r.diseaseTags
+        ? String(r.diseaseTags).split(',').map(t => t.trim()).filter(Boolean)
+        : [],
+      meal: r.meal
     }));
 
-    // Process recent comments data
-    const processedRecentComments = await Promise.all(recentComments.map(async (comment) => {
-      let authorName = '';
-      let authorImage = '/images/GF3.jpg';
-      let userType = 'member';
+    // ===== เติมข้อมูลชื่อ/รูปผู้คอมเมนต์ (admin/member) =====
+    const processedRecentComments = await Promise.all(
+      recentComments.map(async (c) => {
+        let authorName = '';
+        let authorImage = '/images/GF3.jpg';
+        let userType = 'member';
 
-      try {
-        // Check if admin
-        const [adminRows] = await pool.execute(
-          'SELECT First_name FROM admin WHERE Email_Admin = ?',
-          [comment.memberEmail]
-        );
-
-        if (adminRows.length > 0) {
-          authorName = adminRows[0].First_name || 'แอดมิน';
-          userType = 'admin';
-        } else {
-          // Check if member
-          const [memberRows] = await pool.execute(
-            'SELECT First_name, Image FROM members WHERE Email_member = ?',
-            [comment.memberEmail]
+        try {
+          // ตรวจว่าเป็นแอดมินไหม
+          const [adminRows] = await pool.execute(
+            'SELECT First_name FROM admin WHERE Email_Admin = ?',
+            [c.memberEmail]
           );
 
-          if (memberRows.length > 0) {
-            authorName = memberRows[0].First_name || '';
-            authorImage = memberRows[0].Image || '/images/GF3.jpg';
+          if (adminRows.length > 0) {
+            authorName = adminRows[0].First_name || 'แอดมิน';
+            userType = 'admin';
+          } else {
+            // มิฉะนั้นลองเป็นสมาชิก
+            const [memberRows] = await pool.execute(
+              'SELECT First_name, Image FROM members WHERE Email_member = ?',
+              [c.memberEmail]
+            );
+            if (memberRows.length > 0) {
+              authorName = memberRows[0].First_name || '';
+              authorImage = memberRows[0].Image || '/images/GF3.jpg';
+            }
           }
+        } catch (e) {
+          console.error('Error fetching user info for comment:', e);
         }
-      } catch (error) {
-        console.error('Error fetching user info for comment:', error);
-      }
 
-      return {
-        id: comment.id,
-        body: comment.body,
-        recipeId: comment.recipeId,
-        recipeTitle: comment.recipeTitle,
-        memberEmail: comment.memberEmail,
-        date: comment.date,
-        authorName: authorName || (comment.memberEmail ? String(comment.memberEmail).split('@')[0] : 'ไม่ระบุ'),
-        authorImage: authorImage,
-        userType: userType
-      };
-    }));
+        return {
+          id: c.id,
+          body: c.body,
+          recipeId: c.recipeId,
+          recipeTitle: c.recipeTitle,
+          memberEmail: c.memberEmail,
+          date: c.date,
+          authorName: authorName || (c.memberEmail ? String(c.memberEmail).split('@')[0] : 'ไม่ระบุ'),
+          authorImage,
+          userType
+        };
+      })
+    );
 
-    // Calculate growth rates - ใช้ข้อมูลปัจจุบันทั้งหมด (ไม่มี created_at)
+    // ===== growth rate (ไม่มี created_at → เท่ากับนับปัจจุบัน) =====
     const [
       [prevUsersCount],
       [prevRecipesCount],
       [prevBookmarksCount],
       [prevCommentsCount]
     ] = await Promise.all([
-      pool.execute('SELECT COUNT(*) as count FROM members'), // ใช้ข้อมูลทั้งหมด
-      pool.execute('SELECT COUNT(*) as count FROM recipes'), // ใช้ข้อมูลทั้งหมด
-      pool.execute('SELECT COUNT(*) as count FROM bookmarks'), // ใช้ข้อมูลทั้งหมด
-      pool.execute('SELECT COUNT(*) as count FROM comments') // ใช้ข้อมูลทั้งหมด
+      pool.execute('SELECT COUNT(*) AS count FROM members'),
+      pool.execute('SELECT COUNT(*) AS count FROM recipes'),
+      pool.execute('SELECT COUNT(*) AS count FROM bookmarks'),
+      pool.execute('SELECT COUNT(*) AS count FROM comments')
     ]);
 
     const calculateGrowthRate = (current, previous) => {
@@ -155,31 +178,101 @@ export default async function handler(req, res) {
       return Math.round(((current - previous) / previous) * 100);
     };
 
+    // ====== สถิติ “จำนวนสมาชิกตามโรคที่สนใจ (จากหน้าโปรไฟล์)” ======
+    let diseaseStats = [];
+    let diseaseSource = 'user_profile_selection';
+
+    try {
+      // A) โครงสร้างที่แนะนำ: ตาราง many-to-many (member_disease_tags)
+      const [rowsA] = await pool.execute(`
+        SELECT 
+          d.Disease_type AS disease_name,
+          COUNT(mdt.member_email) AS member_count
+        FROM diseases d
+        LEFT JOIN member_disease_tags mdt
+          ON mdt.Disease_code = d.Disease_code
+        GROUP BY d.Disease_code, d.Disease_type
+        ORDER BY member_count DESC, d.Disease_type ASC
+      `);
+      diseaseStats = rowsA;
+      diseaseSource = 'member_disease_tags';
+    } catch (eA) {
+      try {
+        // B) Fallback 1: members.Disease_tags เก็บเป็น CSV ของ "รหัสโรค" หรือ "ชื่อโรค"
+        //    - ตัดช่องว่างด้วย REPLACE
+        //    - เทียบทั้งรหัส (FIND_IN_SET(d.Disease_code, ...)) และชื่อ (FIND_IN_SET(LOWER(d.Disease_type), LOWER(...)))
+        const [rowsB] = await pool.execute(`
+          SELECT
+            d.Disease_type AS disease_name,
+            SUM(
+              CASE 
+                WHEN 
+                  FIND_IN_SET(CAST(d.Disease_code AS CHAR), REPLACE(IFNULL(m.Disease_tags,''), ' ', '')) > 0
+                  OR FIND_IN_SET(
+                       LOWER(d.Disease_type),
+                       LOWER(REPLACE(IFNULL(m.Disease_tags,''), ' ', ''))
+                     ) > 0
+                THEN 1 ELSE 0
+              END
+            ) AS member_count
+          FROM diseases d
+          LEFT JOIN members m ON 1=1
+          GROUP BY d.Disease_code, d.Disease_type
+          ORDER BY member_count DESC, d.Disease_type ASC
+        `);
+        diseaseStats = rowsB;
+        diseaseSource = 'members.Disease_tags';
+      } catch (eB) {
+        try {
+          // C) Fallback 2: ใช้ members.Disease_code (single code)
+          const [rowsC] = await pool.execute(`
+            SELECT 
+              d.Disease_type AS disease_name,
+              COUNT(m.Email_member) AS member_count
+            FROM diseases d
+            LEFT JOIN members m
+              ON m.Disease_code = d.Disease_code
+            GROUP BY d.Disease_code, d.Disease_type
+            ORDER BY member_count DESC, d.Disease_type ASC
+          `);
+          diseaseStats = rowsC;
+          diseaseSource = 'members.Disease_code';
+        } catch (eC) {
+          console.error('Disease stats error:', eA?.message, eB?.message, eC?.message);
+          diseaseStats = [];
+          diseaseSource = 'unknown';
+        }
+      }
+    }
+
+    // ===== รวมผลลัพธ์ทั้งหมด =====
     const stats = {
       totalUsers: usersCount[0].count,
       totalRecipes: recipesCount[0].count,
       totalBookmarks: bookmarksCount[0].count,
       totalComments: commentsCount[0].count,
       growthRates: {
-        users: calculateGrowthRate(usersCount[0].count, prevUsersCount[0].count),
-        recipes: calculateGrowthRate(recipesCount[0].count, prevRecipesCount[0].count),
+        users:     calculateGrowthRate(usersCount[0].count,     prevUsersCount[0].count),
+        recipes:   calculateGrowthRate(recipesCount[0].count,   prevRecipesCount[0].count),
         bookmarks: calculateGrowthRate(bookmarksCount[0].count, prevBookmarksCount[0].count),
-        comments: calculateGrowthRate(commentsCount[0].count, prevCommentsCount[0].count)
+        comments:  calculateGrowthRate(commentsCount[0].count,  prevCommentsCount[0].count)
       },
       recent: {
         users: processedRecentUsers,
         recipes: processedRecentRecipes,
         comments: processedRecentComments
-      }
+      },
+      // ✅ ใหม่: รายงานตามโรค (จากหน้าโปรไฟล์)
+      diseaseStats,
+      diseaseSource
     };
 
     return res.status(200).json({ stats });
   } catch (error) {
     console.error('GET /api/admin-stats error:', error);
-    return res.status(500).json({ 
-      message: 'เกิดข้อผิดพลาดจากฐานข้อมูล', 
-      error: error.message 
+    return res.status(500).json({
+      message: 'เกิดข้อผิดพลาดจากฐานข้อมูล',
+      error: error.message
     });
   }
 }
-
