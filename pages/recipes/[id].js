@@ -3,7 +3,7 @@ import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import styles from '../../styles/RecipeDetail.module.css';
-import { FaCommentDots, FaBookmark, FaTrash } from 'react-icons/fa';
+import { FaCommentDots, FaBookmark, FaTrash, FaEdit, FaCheck, FaTimes } from 'react-icons/fa';
 
 // จัด path รูปจาก /public
 function normalizeImagePath(p) {
@@ -41,6 +41,11 @@ export default function RecipeDetail({ recipe }) {
   const [newComment, setNewComment] = useState('');
   const [posting, setPosting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  
+  // State สำหรับการแก้ไขคอมเม้น
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editCommentText, setEditCommentText] = useState('');
+  const [updating, setUpdating] = useState(false);
 
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
@@ -278,6 +283,68 @@ export default function RecipeDetail({ recipe }) {
     }
   };
 
+  // เริ่มแก้ไขคอมเม้น
+  const handleStartEdit = (comment) => {
+    setEditingCommentId(comment.id);
+    setEditCommentText(comment.body);
+  };
+
+  // ยกเลิกการแก้ไข
+  const handleCancelEdit = () => {
+    setEditingCommentId(null);
+    setEditCommentText('');
+  };
+
+  // บันทึกการแก้ไข
+  const handleSaveEdit = async () => {
+    if (!editCommentText.trim()) {
+      setErrorMsg('กรุณาพิมพ์ข้อความก่อนบันทึก');
+      return;
+    }
+
+    try {
+      setUpdating(true);
+      setErrorMsg('');
+      
+      const actorEmail = getMemberEmail();
+      const res = await fetch('/api/comments', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-email': actorEmail || ''
+        },
+        body: JSON.stringify({
+          id: editingCommentId,
+          body: editCommentText.trim()
+        })
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || 'แก้ไขคอมเม้นต์ไม่สำเร็จ');
+      }
+
+      const result = await res.json();
+      
+      // อัปเดตคอมเม้นต์ใน state
+      setComments(prev => prev.map(c => 
+        c.id === editingCommentId 
+          ? { ...c, body: editCommentText.trim() }
+          : c
+      ));
+
+      // รีเซ็ต state
+      setEditingCommentId(null);
+      setEditCommentText('');
+      
+    } catch (error) {
+      console.error('Error updating comment:', error);
+      setErrorMsg(error.message || 'แก้ไขคอมเม้นต์ไม่สำเร็จ');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   if (!recipe) {
     return (
       <div className={styles.container}>
@@ -297,7 +364,8 @@ export default function RecipeDetail({ recipe }) {
           </Link>
           <div className={styles.titleSection}>
             <h1 className={styles.title}>{recipe.title}</h1>
-            <div className={styles.metaRow}>
+            {/* แสดงชื่อนักเขียน */}
+            {/* <div className={styles.metaRow}>
               <div className={styles.authorRow}>
                 <img 
                   className={styles.avatar} 
@@ -310,7 +378,7 @@ export default function RecipeDetail({ recipe }) {
                   <span className={styles.authorRole}>ผู้เชี่ยวชาญด้านอาหาร</span>
                 </div>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
@@ -357,53 +425,47 @@ export default function RecipeDetail({ recipe }) {
         </div>
       )}
 
-      {(recipe.ingredients?.length || 0) > 0 && (
+      {((recipe.ingredients?.length || 0) > 0 || (recipe.steps?.length || 0) > 0) && (
         <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>ส่วนผสม</h2>
-          <ul className={styles.ingredientList}>
-            {recipe.ingredients.map((row, idx) => (
-              <li key={idx} className={styles.ingredientRow}>
-                <span className={styles.itemNo}>{idx + 1}</span>
-                <span className={styles.ingredientName}>{row.name}</span>
-              </li>
-            ))}
-          </ul>
+          <h2 className={styles.sectionTitle}>ส่วนผสมและวิธีทำ</h2>
+          <div className={styles.comparisonContainer}>
+            {/* ส่วนผสม */}
+            {(recipe.ingredients?.length || 0) > 0 && (
+              <div className={styles.comparisonColumn}>
+                <div className={`${styles.columnTitle} ${styles.ingredientsColumn}`}>
+                  📋 ส่วนผสม
+                </div>
+                <ul className={styles.ingredientList}>
+                  {recipe.ingredients.map((row, idx) => (
+                    <li key={idx} className={styles.ingredientRow}>
+                      <span className={styles.itemNo}>{idx + 1}</span>
+                      <span className={styles.ingredientName}>{row.name}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {/* วิธีทำ */}
+            {(recipe.steps?.length || 0) > 0 && (
+              <div className={styles.comparisonColumn}>
+                <div className={`${styles.columnTitle} ${styles.stepsColumn}`}>
+                  👨‍🍳 วิธีทำ
+                </div>
+                <ul className={styles.stepList}>
+                  {recipe.steps.map((row, idx) => (
+                    <li key={idx} className={styles.stepItem}>
+                      <span className={styles.itemNo}>{idx + 1}</span>
+                      <span className={styles.stepContent}>{row.text}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
-      {(recipe.steps?.length || 0) > 0 && (
-        <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>วิธีทำ</h2>
-          <ul className={styles.stepList}>
-            {recipe.steps.map((row, idx) => (
-              <li key={idx} className={styles.stepItem}>
-                <span className={styles.itemNo}>{idx + 1}</span>
-                <span className={styles.stepContent}>{row.text}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {(recipe.tags?.length || 0) > 0 && (
-      <div className={styles.section}>
-  <h2 className={styles.sectionTitle}>แท็ก</h2>
-  <div className={styles.tagRow}>
-    {/* 🔹 แสดงแท็กของโรค */}
-    {recipe.tags?.map((t, i) => (
-      <span key={`tag-${i}`} className={styles.tag}>{t}</span>
-    ))}
-
-    {/* 🔹 แสดงแท็กของมื้ออาหาร (ภาษาไทย) */}
-    {recipe.mealTypes?.map((meal, i) => (
-      <span key={`meal-${i}`} className={`${styles.tag} ${styles.mealTag}`}>
-         {translateMeal(meal)}
-      </span>
-    ))}
-  </div>
-</div>
-
-      )}
 
       <div className={styles.section}>
         <h2 className={styles.sectionTitle}><FaCommentDots /> ความคิดเห็น</h2>
@@ -443,17 +505,57 @@ export default function RecipeDetail({ recipe }) {
                       </div>
                     </div>
                     {canDelete && isLoggedIn && (
-                      <button
-                        className={styles.deleteCommentBtn}
-                        onClick={() => handleDeleteComment(c.id)}
-                        title="ลบคอมเม้นต์"
-                        aria-label="ลบคอมเม้นต์"
-                      >
-                        <FaTrash />
-                      </button>
+                      <div className={styles.commentActions}>
+                        <button
+                          className={styles.editCommentBtn}
+                          onClick={() => handleStartEdit(c)}
+                          title="แก้ไขคอมเม้นต์"
+                          aria-label="แก้ไขคอมเม้นต์"
+                        >
+                          <FaEdit />
+                        </button>
+                        <button
+                          className={styles.deleteCommentBtn}
+                          onClick={() => handleDeleteComment(c.id)}
+                          title="ลบคอมเม้นต์"
+                          aria-label="ลบคอมเม้นต์"
+                        >
+                          <FaTrash />
+                        </button>
+                      </div>
                     )}
                   </div>
-                  <p className={styles.commentBody}>{c.body}</p>
+                  
+                  {/* แสดงเนื้อหาคอมเม้นหรือฟอร์มแก้ไข */}
+                  {editingCommentId === c.id ? (
+                    <div className={styles.editCommentForm}>
+                      <textarea
+                        className={styles.editCommentInput}
+                        value={editCommentText}
+                        onChange={(e) => setEditCommentText(e.target.value)}
+                        rows={3}
+                        placeholder="แก้ไขความคิดเห็นของคุณ..."
+                      />
+                      <div className={styles.editCommentActions}>
+                        <button
+                          className={styles.saveEditBtn}
+                          onClick={handleSaveEdit}
+                          disabled={updating || !editCommentText.trim()}
+                        >
+                          {updating ? 'กำลังบันทึก...' : <><FaCheck /> บันทึก</>}
+                        </button>
+                        <button
+                          className={styles.cancelEditBtn}
+                          onClick={handleCancelEdit}
+                          disabled={updating}
+                        >
+                          <FaTimes /> ยกเลิก
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className={styles.commentBody}>{c.body}</p>
+                  )}
                 </div>
               );
             })
@@ -576,7 +678,7 @@ export async function getServerSideProps(context) {
       title: r.Recipe_name || 'ไม่ทราบชื่อ',
       image: normalizeImagePath(r.Image),
       details: String(r.details || '').replace(/\r\n?/g, '\n').trim(),
-      mealTypes: r.Meal ? [r.Meal] : [],
+      mealTypes: r.Meal ? [translateMeal(r.Meal)] : [],
       diseases: r.Disease_code ? [Number(r.Disease_code)] : [],
       ingredients,
       steps,

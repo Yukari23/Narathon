@@ -9,6 +9,8 @@ export default async function handler(req, res) {
       const [rows] = await pool.execute(
         'SELECT Recipe_code, Recipe_name, Image, details, Meal, Disease_tags, Disease_code, raw_material, method FROM recipes ORDER BY Recipe_code DESC'
       );
+      
+      
       return res.status(200).json({ recipes: rows });
     } catch (error) {
       console.error('GET /api/recipes error:', error);

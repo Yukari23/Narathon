@@ -1,43 +1,44 @@
-/* ย้อนกลับเป็นสไตล์เดิมของ add-recipe */
+/* Modern Web App UI - Horizontal Layout */
 
 /* พื้นหลังและจัดตำแหน่งเนื้อหา */
 .pageWrapper {
-  background: linear-gradient(135deg, var(--primary-700), var(--primary-100));
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0;
-  padding: var(--spacing-md);
+  padding: 20px;
+  font-family: 'Kanit', sans-serif;
 }
 
 /* กล่องหลักของฟอร์ม */
 .container {
-  width: 60%;
-  max-width: 700px;
- /* margin: var(--spacing-xl) auto;
-  padding: var(--spacing-2xl);*/
-  background: var(--background);
-  border-radius: var(--radius-2xl);
-  box-shadow: var(--shadow-xl);
-  border: 1px solid var(--border-light);
-  font-family: 'Kanit', sans-serif;
-  margin: 50px auto;
-  padding: 50px;
+  max-width: 1200px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
 
+/* Top Bar */
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 30px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.topBarRight {
+  width: 120px; /* Same width as back button to center title */
 }
 
 /* หัวข้อ */
 .title {
-  font-size: 2rem;
-  color: var(--text-primary);
+  font-size: 1.8rem;
+  color: white;
   text-align: center;
-  margin-bottom: var(--spacing-xl);
   font-weight: 700;
-  background: linear-gradient(135deg, var(--secondary-800), var(--primary-600));
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  margin: 0;
 }
 
 /* Spinner */
@@ -56,31 +57,46 @@
   100% { transform: rotate(360deg); }
 }
 
-/* ฟอร์มหลัก */
+/* ฟอร์มหลัก - แนวนอน */
 .form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  padding: 30px;
+}
+
+/* ส่วนซ้าย - รูปภาพและข้อมูลพื้นฐาน */
+.formLeft {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xl);
+  gap: 20px;
+}
+
+/* ส่วนขวา - ส่วนผสม วิธีทำ และแท็ก */
+.formRight {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 /* ส่วนอัปโหลดรูป */
 .imageUpload {
   width: 100%;
-  height: 300px;
-  border: 2px dashed var(--border-medium);
-  border-radius: var(--radius-xl);
+  height: 250px;
+  border: 2px dashed #e2e8f0;
+  border-radius: 15px;
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-bottom: var(--spacing-xl);
   overflow: hidden;
   position: relative;
-  transition: all var(--transition-normal);
+  transition: all 0.3s ease;
+  background: #f8fafc;
 }
 
 .imageUpload:hover {
-  border-color: var(--primary-400);
-  background: var(--primary-50);
+  border-color: #667eea;
+  background: #f0f4ff;
 }
 
 /* ป้ายอัปโหลดรูป */
@@ -92,8 +108,16 @@
   cursor: pointer;
   color: #64748b;
   padding: 2rem;
+  transition: color 0.3s ease;
 }
-.uploadLabel svg { font-size: 2rem; }
+
+.uploadLabel:hover {
+  color: #667eea;
+}
+
+.uploadLabel svg { 
+  font-size: 2rem; 
+}
 
 /* กล่องแสดงตัวอย่างรูป */
 .previewContainer { width: 100%; height: 100%; position: relative; }
@@ -119,92 +143,233 @@
 .removeImage:hover { background: rgba(0, 0, 0, 0.7); }
 
 /* กลุ่มฟอร์ม */
-.formGroup { display: flex; flex-direction: column; gap: 0.5rem; }
-.formGroup label { font-weight: 600; color: #1e293b; font-size: 1.05rem; }
-.formGroup input, .formGroup textarea {
-  padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1.05rem; transition: all 0.2s ease; font-family: 'Kanit', sans-serif; font-weight: 500;
+.formGroup { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 8px; 
 }
-.formGroup textarea { min-height: 100px; resize: vertical; }
+
+.formGroup label { 
+  font-weight: 600; 
+  color: #374151; 
+  font-size: 1rem; 
+  margin-bottom: 4px;
+}
+
+.formGroup input, .formGroup textarea {
+  padding: 12px 16px; 
+  border: 2px solid #e5e7eb; 
+  border-radius: 10px; 
+  font-size: 1rem; 
+  transition: all 0.3s ease; 
+  font-family: 'Kanit', sans-serif; 
+  font-weight: 400;
+  background: #f9fafb;
+}
+
+.formGroup textarea { 
+  min-height: 80px; 
+  resize: vertical; 
+}
+
 .formGroup input:focus, .formGroup textarea:focus {
-  outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  outline: none; 
+  border-color: #667eea; 
+  background: white;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 /* รายการวัตถุดิบ/ขั้นตอน */
-.listItem { display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 0.5rem; }
-.listItem input, .listItem textarea { flex: 1; }
+.listItem { 
+  display: flex; 
+  gap: 12px; 
+  align-items: flex-start; 
+  margin-bottom: 8px; 
+}
+
+.listItem input, .listItem textarea { 
+  flex: 1; 
+  background: #f9fafb;
+}
 
 /* ปุ่มลบรายการ */
 .removeButton {
-  background: none; border: none; color: #ef4444; cursor: pointer; padding: 0.5rem; border-radius: 6px;
-  display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;
+  background: none; 
+  border: none; 
+  color: #ef4444; 
+  cursor: pointer; 
+  padding: 8px; 
+  border-radius: 8px;
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  transition: all 0.3s ease;
+  min-width: 40px;
+  height: 40px;
 }
-.removeButton:hover { background: #fee2e2; }
+
+.removeButton:hover { 
+  background: #fee2e2; 
+  transform: scale(1.1);
+}
 
 /* ปุ่มเพิ่มรายการ */
 .addButton {
-  background: none; border: 2px dashed #e2e8f0; color: #3b82f6; padding: 0.75rem; border-radius: 8px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; transition: all 0.2s ease; margin-top: 1rem;
+  background: #667eea; 
+  border: 2px solid #667eea; 
+  color: white; 
+  padding: 12px 16px; 
+  border-radius: 10px; 
+  cursor: pointer;
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  gap: 8px; 
+  width: 100%; 
+  transition: all 0.3s ease; 
+  margin-top: 8px;
+  font-weight: 500;
 }
-.addButton:hover { background: #f8fafc; border-color: #3b82f6; }
+
+.addButton:hover { 
+  background: #5a67d8; 
+  border-color: #5a67d8; 
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
 
 /* ส่วนเลือกแท็ก */
-.tagGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 0.5rem; }
-.tagButton {
-  padding: 0.75rem; border: 2px solid; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
-  font-size: 0.9rem; transition: all 0.2s ease; background: transparent; color: #1e293b;
+.tagGrid { 
+  display: grid; 
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); 
+  gap: 12px; 
+  margin-top: 8px; 
 }
-.tagButton svg { font-size: 1.2rem; }
-.tagSelected { color: #1e293b; font-weight: 500; }
+
+.tagButton {
+  padding: 12px 16px; 
+  border: 2px solid; 
+  border-radius: 10px; 
+  cursor: pointer; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  gap: 8px;
+  font-size: 0.9rem; 
+  transition: all 0.3s ease; 
+  background: #f9fafb; 
+  color: #374151;
+  font-weight: 500;
+}
+
+.tagButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.tagButton svg { 
+  font-size: 1.2rem; 
+}
+
+.tagSelected { 
+  color: #374151; 
+  font-weight: 600; 
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
 
 /* ปุ่มส่งฟอร์ม */
 .submitButton {
-  background: linear-gradient(135deg, var(--primary-500), var(--primary-600)); 
-  color: var(--text-inverse); 
-  padding: var(--spacing-lg); 
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+  color: white; 
+  padding: 16px 32px; 
   border: none; 
-  border-radius: var(--radius-xl); 
+  border-radius: 12px; 
   font-size: 1.1rem;
   cursor: pointer; 
   display: flex; 
   align-items: center; 
   justify-content: center; 
-  gap: var(--spacing-md); 
-  transition: all var(--transition-normal); 
-  margin-top: var(--spacing-lg);
+  gap: 12px; 
+  transition: all 0.3s ease; 
+  margin-top: 20px;
   font-weight: 600;
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  grid-column: 1 / -1; /* Span across both columns */
 }
+
 .submitButton:hover { 
-  transform: translateY(-2px); 
-  box-shadow: var(--shadow-lg); 
+  transform: translateY(-3px); 
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4); 
 }
+
 .submitButton:active { 
-  transform: translateY(0); 
+  transform: translateY(-1px); 
+}
+
+.submitButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
 }
 
 /* ปรับสำหรับหน้าจอเล็ก */
 @media (max-width: 768px) {
-  .container { 
-    margin: var(--spacing-md); 
-    padding: var(--spacing-lg); 
-    width: 95%;
+  .pageWrapper {
+    padding: 10px;
   }
+  
+  .container { 
+    margin: 0;
+    border-radius: 15px;
+  }
+  
+  .form {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 20px;
+  }
+  
+  .topBar {
+    padding: 15px 20px;
+  }
+  
+  .title {
+    font-size: 1.5rem;
+  }
+  
   .tagGrid { 
     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); 
   }
+  
+  .imageUpload {
+    height: 200px;
+  }
 }
+
 @media (max-width: 480px) {
-  .imageUpload { 
-    height: 200px; 
+  .form {
+    padding: 15px;
   }
+  
+  .topBar {
+    padding: 12px 15px;
+  }
+  
   .title { 
-    font-size: 1.5rem; 
+    font-size: 1.3rem; 
   }
+  
   .tagGrid { 
     grid-template-columns: 1fr 1fr; 
   }
-  .container {
-    padding: var(--spacing-md);
+  
+  .imageUpload { 
+    height: 180px; 
+  }
+  
+  .formGroup input, .formGroup textarea {
+    padding: 10px 12px;
+    font-size: 0.95rem;
   }
 }
 
@@ -212,25 +377,25 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: linear-gradient(145deg, #f0f9ff, #e0f2fe);
-  color: #0ea5e9;
-  font-weight: 700;
-  border: 1.5px solid #bae6fd;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-weight: 600;
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 12px;
-  padding: 0.6rem 1.4rem;
+  padding: 10px 16px;
   font-size: 1rem;
   cursor: pointer;
-  transition: all 0.25s ease;
-  box-shadow: 0 2px 6px rgba(14, 165, 233, 0.15);
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
 }
 
 .backButton:hover {
-  background: linear-gradient(145deg, #e0f2fe, #f0f9ff);
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
   transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(14, 165, 233, 0.2);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 .backButton:active {
   transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(14, 165, 233, 0.15);
 }

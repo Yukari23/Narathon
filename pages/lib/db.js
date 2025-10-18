@@ -7,7 +7,7 @@ const pool = mysql.createPool({
   password: '',        // ถ้ามีรหัสผ่านใน XAMPP ให้ใส่ตรงนี้
   database: 'food_recipes',
   waitForConnections: true,
-  connectionLimit: 10,
+  connectionLimit: 50,  // เพิ่มจาก 10 เป็น 50
   queueLimit: 0
 });
 

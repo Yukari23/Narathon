@@ -41,10 +41,10 @@ export default function EditRecipe() {
   }, []);
 
   useEffect(() => {
-    if (id) {
+    if (id && diseases.length > 0) {
       loadRecipe();
     }
-  }, [id]);
+  }, [id, diseases]);
 
   const loadRecipe = async () => {
     try {
@@ -100,18 +100,67 @@ export default function EditRecipe() {
         const ingredients = parseList(recipe.raw_material);
         const steps = parseList(recipe.method);
 
-        // แปลง Meal จากตัวเลขเป็น string
+        // Debug: แสดงข้อมูลที่โหลดมา
+        console.log('Loaded recipe data:');
+        console.log('- Meal:', recipe.Meal, 'Type:', typeof recipe.Meal);
+        console.log('- Disease_tags:', recipe.Disease_tags, 'Type:', typeof recipe.Disease_tags);
+        console.log('- Disease_code:', recipe.Disease_code, 'Type:', typeof recipe.Disease_code);
+
+        // แปลง Meal จาก string (คั่นด้วยจุลภาค) เป็น array
         let selectedMeals = [];
         if (recipe.Meal) {
           const mealMap = { '1': 'breakfast', '2': 'lunch', '3': 'dinner' };
-          selectedMeals = [mealMap[recipe.Meal]] || [];
+          // ถ้าเป็น string คั่นด้วยจุลภาค ให้แยกออกมา
+          if (typeof recipe.Meal === 'string' && recipe.Meal.includes(',')) {
+            selectedMeals = recipe.Meal.split(',')
+              .map(m => {
+                const trimmed = m.trim();
+                // ถ้าเป็นตัวเลข ให้แปลงเป็น string
+                if (mealMap[trimmed]) {
+                  return mealMap[trimmed];
+                }
+                // ถ้าเป็น string อยู่แล้ว ให้ใช้เลย
+                return trimmed;
+              })
+              .filter(Boolean);
+          } else if (typeof recipe.Meal === 'string') {
+            // ถ้าเป็น string เดียว (เช่น "1" หรือ "breakfast")
+            if (mealMap[recipe.Meal]) {
+              selectedMeals = [mealMap[recipe.Meal]];
+            } else if (['breakfast', 'lunch', 'dinner'].includes(recipe.Meal)) {
+              selectedMeals = [recipe.Meal];
+            }
+          } else {
+            // ถ้าเป็นตัวเลขเดียว
+            selectedMeals = [mealMap[String(recipe.Meal)]] || [];
+          }
         }
 
-        // แปลง Disease_code เป็น selectedDiseases
+        // แปลง Disease_tags เป็น selectedDiseases
         let selectedDiseases = [];
-        if (recipe.Disease_code) {
+        if (recipe.Disease_tags) {
+          // ถ้าเป็น string คั่นด้วยจุลภาค ให้แยกออกมา
+          if (typeof recipe.Disease_tags === 'string' && recipe.Disease_tags.includes(',')) {
+            const diseaseNames = recipe.Disease_tags.split(',').map(d => d.trim());
+            selectedDiseases = diseases.filter(d => diseaseNames.includes(d.name)).map(d => d.id);
+          } else {
+            // ถ้าเป็นชื่อโรคเดียว
+            const disease = diseases.find(d => d.name === recipe.Disease_tags);
+            if (disease) selectedDiseases = [disease.id];
+          }
+        }
+        
+        // Fallback: ใช้ Disease_code ถ้าไม่มี Disease_tags
+        if (selectedDiseases.length === 0 && recipe.Disease_code) {
           selectedDiseases = [recipe.Disease_code];
         }
+
+        // Debug: แสดงข้อมูลที่แปลงแล้ว
+        console.log('Converted data:');
+        console.log('- selectedMeals:', selectedMeals);
+        console.log('- selectedDiseases:', selectedDiseases);
+        console.log('- Original Meal string:', recipe.Meal);
+        console.log('- Parsed meal array:', selectedMeals);
 
         setRecipeData({
           title: recipe.Recipe_name || '',
@@ -195,10 +244,51 @@ export default function EditRecipe() {
   };
 
   const toggleDisease = (diseaseId) => {
-    setRecipeData(prev => ({ ...prev, selectedDiseases: [diseaseId] }));
+    setRecipeData(prev => {
+      const isSelected = prev.selectedDiseases.includes(diseaseId);
+      if (isSelected) {
+        // ถ้าเลือกอยู่แล้ว ให้ยกเลิกการเลือก
+        return {
+          ...prev,
+          selectedDiseases: prev.selectedDiseases.filter(id => id !== diseaseId)
+        };
+      } else {
+        // ถ้ายังไม่ได้เลือก ให้เพิ่มเข้าไป
+        return {
+          ...prev,
+          selectedDiseases: [...prev.selectedDiseases, diseaseId]
+        };
+      }
+    });
   };
 
-  const selectMeal = mealId => setRecipeData(d => ({ ...d, selectedMeals: [mealId] }));
+  const selectMeal = (mealId) => {
+    console.log('selectMeal function called with:', mealId);
+    console.log('Current recipeData.selectedMeals:', recipeData.selectedMeals);
+    
+    setRecipeData(prev => {
+      const isSelected = prev.selectedMeals.includes(mealId);
+      console.log('Is meal selected:', isSelected);
+      
+      if (isSelected) {
+        // ถ้าเลือกอยู่แล้ว ให้ยกเลิกการเลือก
+        const newSelectedMeals = prev.selectedMeals.filter(id => id !== mealId);
+        console.log('Removing meal, new selectedMeals:', newSelectedMeals);
+        return {
+          ...prev,
+          selectedMeals: newSelectedMeals
+        };
+      } else {
+        // ถ้ายังไม่ได้เลือก ให้เพิ่มเข้าไป
+        const newSelectedMeals = [...prev.selectedMeals, mealId];
+        console.log('Adding meal, new selectedMeals:', newSelectedMeals);
+        return {
+          ...prev,
+          selectedMeals: newSelectedMeals
+        };
+      }
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -212,30 +302,37 @@ export default function EditRecipe() {
       // ส่งข้อมูลทั้งหมด - ใช้ค่าจริงหรือค่าว่าง
       const recipeName = recipeData.title || '';
       const recipeDetails = recipeData.description || '';
-      const selectedMeal = recipeData.selectedMeals[0] || '';
+      
+      // ส่งมื้ออาหารหลายมื้อ (คั่นด้วยจุลภาค)
+      const mealsString = recipeData.selectedMeals.join(',');
       const recipeMethod = JSON.stringify(recipeData.steps || ['']);
       const recipeIngredients = JSON.stringify(recipeData.ingredients || ['']);
 
-      const selectedDiseaseId = recipeData.selectedDiseases[0];
-      const selectedDisease = diseases.find(d => d.id === selectedDiseaseId);
-      const diseaseTags = selectedDisease ? selectedDisease.name : '';
-      const diseaseCode = selectedDiseaseId || '';
+      // ส่งโรคหลายโรค
+      const selectedDiseaseIds = recipeData.selectedDiseases;
+      const selectedDiseases = diseases.filter(d => selectedDiseaseIds.includes(d.id));
+      
+      // สร้าง Disease_tags จากโรคที่เลือก (คั่นด้วยจุลภาค)
+      const diseaseTagsString = selectedDiseases.map(d => d.name).join(',');
+      
+      // ส่ง Disease_code ตัวแรก (สำหรับความเข้ากันได้กับระบบเดิม)
+      const diseaseCode = selectedDiseaseIds[0] || '';
 
       formData.append('Recipe_name', recipeName);
       formData.append('details', recipeDetails);
-      formData.append('Meal', selectedMeal);
+      formData.append('Meal', mealsString);
       formData.append('method', recipeMethod);
       formData.append('raw_material', recipeIngredients);
-      formData.append('Disease_tags', diseaseTags);
+      formData.append('Disease_tags', diseaseTagsString);
       formData.append('Disease_code', diseaseCode);
 
       console.log('Prepared data:');
       console.log('- Recipe_name:', recipeName);
       console.log('- details:', recipeDetails);
-      console.log('- Meal:', selectedMeal);
+      console.log('- Meal:', mealsString);
       console.log('- method:', recipeMethod);
       console.log('- raw_material:', recipeIngredients);
-      console.log('- Disease_tags:', diseaseTags);
+      console.log('- Disease_tags:', diseaseTagsString);
       console.log('- Disease_code:', diseaseCode);
 
       if (recipeData.imageFile) {
@@ -308,214 +405,219 @@ export default function EditRecipe() {
   return (
     <div className={styles.pageWrapper}>
       <div className={styles.container}>
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '2rem' }}>
-          <button
-            onClick={() => router.back()}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '1.5rem',
-              cursor: 'pointer',
-              marginRight: '1rem',
-              color: '#667eea'
-            }}
-          >
-            <FaArrowLeft />
+        <div className={styles.topBar}>
+          <button type="button" className={styles.backButton} onClick={() => router.back()}>
+            <span>←</span> ย้อนกลับ
           </button>
+
           <h1 className={styles.title}>แก้ไขสูตรอาหาร</h1>
+
+          {/* ช่องว่างถ่วงน้ำหนักฝั่งขวา เพื่อให้หัวข้อกลางจริง */}
+          <div className={styles.topBarRight} aria-hidden="true" />
         </div>
 
         <form onSubmit={handleSubmit} className={styles.form}>
-          {/* อัพโหลดรูปภาพ */}
-          <div className={styles.imageUpload}>
-            {recipeData.imagePreview ? (
-              <div className={styles.previewContainer}>
-                <img
-                  src={recipeData.imagePreview}
-                  alt="Preview"
-                  className={styles.preview}
-                />
-                <button
-                  type="button"
-                  onClick={() => setRecipeData({
-                    ...recipeData,
-                    imagePreview: null,
-                    imageFile: null
-                  })}
-                  className={styles.removeImage}
-                >
-                  <FaTimes />
-                </button>
-              </div>
-            ) : (
-              <label className={styles.uploadLabel}>
-                <FaUpload />
-                <span>อัพโหลดรูปภาพ</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  hidden
-                />
-              </label>
-            )}
-          </div>
-
-          {/* ข้อมูลพื้นฐาน */}
-          <div className={styles.formGroup}>
-            <label>ชื่อเมนู</label>
-            <input
-              type="text"
-              value={recipeData.title}
-              onChange={(e) => setRecipeData({ ...recipeData, title: e.target.value })}
-              placeholder="ใส่ชื่อเมนูอาหาร"
-              required
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label>คำอธิบาย</label>
-            <textarea
-              value={recipeData.description}
-              onChange={(e) => setRecipeData({ ...recipeData, description: e.target.value })}
-              placeholder="อธิบายเกี่ยวกับเมนูนี้"
-            />
-          </div>
-
-          {/* ส่วนผสม */}
-          <div className={styles.formGroup}>
-            <label>ส่วนผสม</label>
-            {recipeData.ingredients.map((ingredient, index) => (
-              <div key={index} className={styles.listItem}>
-                <input
-                  type="text"
-                  value={ingredient}
-                  onChange={(e) => handleIngredientChange(index, e.target.value)}
-                  placeholder="เช่น น้ำตาล 2 ช้อนโต๊ะ"
-                />
-                {recipeData.ingredients.length > 1 && (
+          {/* ส่วนซ้าย - รูปภาพและข้อมูลพื้นฐาน */}
+          <div className={styles.formLeft}>
+            {/* 📸 อัพโหลดรูปภาพ */}
+            <div className={styles.imageUpload}>
+              {recipeData.imagePreview ? (
+                <div className={styles.previewContainer}>
+                  <img
+                    src={recipeData.imagePreview}
+                    alt="Preview"
+                    className={styles.preview}
+                  />
                   <button
                     type="button"
-                    onClick={() => removeIngredient(index)}
-                    className={styles.removeButton}
+                    onClick={() => setRecipeData({
+                      ...recipeData,
+                      imagePreview: null,
+                      imageFile: null
+                    })}
+                    className={styles.removeImage}
                   >
                     <FaTimes />
                   </button>
-                )}
-              </div>
-            ))}
-            <button
-              type="button"
-              onClick={addIngredient}
-              className={styles.addButton}
-            >
-              <FaPlus /> เพิ่มส่วนผสม
-            </button>
-          </div>
-
-          {/* วิธีทำ */}
-          <div className={styles.formGroup}>
-            <label>วิธีทำ</label>
-            {recipeData.steps.map((step, index) => (
-              <div key={index} className={styles.listItem}>
-                <textarea
-                  value={step}
-                  onChange={(e) => handleStepChange(index, e.target.value)}
-                  placeholder={`ขั้นตอนที่ ${index + 1}`}
-                />
-                {recipeData.steps.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeStep(index)}
-                    className={styles.removeButton}
-                  >
-                    <FaTimes />
-                  </button>
-                )}
-              </div>
-            ))}
-            <button
-              type="button"
-              onClick={addStep}
-              className={styles.addButton}
-            >
-              <FaPlus /> เพิ่มขั้นตอน
-            </button>
-          </div>
-
-          {/* แท็ก */}
-          <div className={styles.formGroup}>
-            <label>เหมาะสำหรับผู้ป่วย</label>
-            <div className={styles.tagGrid}>
-              {diseases.map((disease) => (
-                <button
-                  key={disease.id}
-                  type="button"
-                  className={`${styles.tagButton} ${recipeData.selectedDiseases.includes(disease.id) ? styles.tagSelected : ''
-                    }`}
-                  style={{
-                    backgroundColor: recipeData.selectedDiseases.includes(disease.id)
-                      ? getDiseaseColor(disease.id)
-                      : 'transparent',
-                    borderColor: getDiseaseColor(disease.id)
-                  }}
-                  onClick={() => toggleDisease(disease.id)}
-                >
-                  {disease.name}
-                </button>
-              ))}
+                </div>
+              ) : (
+                <label className={styles.uploadLabel}>
+                  <FaUpload />
+                  <span>อัพโหลดรูปภาพ</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    hidden
+                  />
+                </label>
+              )}
             </div>
-            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+
+            {/* 🧾 ข้อมูลพื้นฐาน */}
+            <div className={styles.formGroup}>
+              <label>ชื่อเมนู</label>
               <input
                 type="text"
-                value={newDiseaseName}
-                onChange={(e) => setNewDiseaseName(e.target.value)}
-                placeholder="เพิ่มชื่อแท็กโรคใหม่"
+                value={recipeData.title}
+                onChange={(e) => setRecipeData({ ...recipeData, title: e.target.value })}
+                placeholder="ใส่ชื่อเมนูอาหาร"
+                required
               />
-              <button
-                type="button"
-                onClick={async () => {
-                  const name = newDiseaseName.trim();
-                  if (!name) return;
-                  try {
-                    const res = await fetch('/api/diseases', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ name })
-                    });
-                    const data = await res.json();
-                    if (res.ok) {
-                      setDiseases((prev) => [...prev, { id: data.id, name: data.name }]);
-                      setNewDiseaseName('');
-                    } else {
-                      alert(data.message || 'เพิ่มแท็กโรคล้มเหลว');
-                    }
-                  } catch { }
-                }}
-                className={styles.addButton}
-              >
-                เพิ่มแท็กโรค
-              </button>
+            </div>
+
+            <div className={styles.formGroup}>
+              <label>คำอธิบาย</label>
+              <textarea
+                value={recipeData.description}
+                onChange={(e) => setRecipeData({ ...recipeData, description: e.target.value })}
+                placeholder="อธิบายเกี่ยวกับเมนูนี้"
+              />
+            </div>
+
+            {/* 🍽️ มื้ออาหาร */}
+            <div className={styles.formGroup}>
+              <label>มื้ออาหาร</label>
+              <div className={styles.tagGrid}>
+                {mealTypes.map(meal => (
+                  <button
+                    key={meal.id}
+                    type="button"
+                    className={`${styles.tagButton} ${recipeData.selectedMeals.includes(meal.id) ? styles.tagSelected : ''}`}
+                    style={{
+                      backgroundColor: recipeData.selectedMeals.includes(meal.id) ? meal.color : 'transparent',
+                      borderColor: meal.color
+                    }}
+                    onClick={() => {
+                      console.log('Meal button clicked:', meal.id);
+                      console.log('Current selectedMeals:', recipeData.selectedMeals);
+                      selectMeal(meal.id);
+                    }}
+                  >
+                    {meal.icon} {meal.name}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
-          <div className={styles.formGroup}>
-            <label>มื้ออาหาร</label>
-            <div className={styles.tagGrid}>
-              {mealTypes.map(meal => (
-                <button
-                  key={meal.id}
-                  type="button"
-                  className={`${styles.tagButton} ${recipeData.selectedMeals.includes(meal.id) ? styles.tagSelected : ''}`}
-                  style={{
-                    backgroundColor: recipeData.selectedMeals.includes(meal.id) ? meal.color : 'transparent',
-                    borderColor: meal.color
-                  }}
-                  onClick={() => selectMeal(meal.id)}
-                >
-                  {meal.icon} {meal.name}
-                </button>
+          {/* ส่วนขวา - ส่วนผสม วิธีทำ และแท็ก */}
+          <div className={styles.formRight}>
+            {/* 🥣 ส่วนผสม */}
+            <div className={styles.formGroup}>
+              <label>ส่วนผสม</label>
+              {recipeData.ingredients.map((ingredient, index) => (
+                <div key={index} className={styles.listItem}>
+                  <input
+                    type="text"
+                    value={ingredient}
+                    onChange={(e) => handleIngredientChange(index, e.target.value)}
+                    placeholder="เช่น น้ำตาล 2 ช้อนโต๊ะ"
+                  />
+                  {recipeData.ingredients.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeIngredient(index)}
+                      className={styles.removeButton}
+                    >
+                      <FaTimes />
+                    </button>
+                  )}
+                </div>
               ))}
+              <button
+                type="button"
+                onClick={addIngredient}
+                className={styles.addButton}
+              >
+                <FaPlus /> เพิ่มส่วนผสม
+              </button>
+            </div>
+
+            {/* 🍳 วิธีทำ */}
+            <div className={styles.formGroup}>
+              <label>วิธีทำ</label>
+              {recipeData.steps.map((step, index) => (
+                <div key={index} className={styles.listItem}>
+                  <textarea
+                    value={step}
+                    onChange={(e) => handleStepChange(index, e.target.value)}
+                    placeholder={`ขั้นตอนที่ ${index + 1}`}
+                  />
+                  {recipeData.steps.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeStep(index)}
+                      className={styles.removeButton}
+                    >
+                      <FaTimes />
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={addStep}
+                className={styles.addButton}
+              >
+                <FaPlus /> เพิ่มขั้นตอน
+              </button>
+            </div>
+
+            {/* 🏷️ แท็กโรค */}
+            <div className={styles.formGroup}>
+              <label>เหมาะสำหรับผู้ป่วย</label>
+              <div className={styles.tagGrid}>
+                {diseases.map((disease) => (
+                  <button
+                    key={disease.id}
+                    type="button"
+                    className={`${styles.tagButton} ${recipeData.selectedDiseases.includes(disease.id) ? styles.tagSelected : ''
+                      }`}
+                    style={{
+                      backgroundColor: recipeData.selectedDiseases.includes(disease.id)
+                        ? getDiseaseColor(disease.id)
+                        : 'transparent',
+                      borderColor: getDiseaseColor(disease.id)
+                    }}
+                    onClick={() => toggleDisease(disease.id)}
+                  >
+                    {disease.name}
+                  </button>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                <input
+                  type="text"
+                  value={newDiseaseName}
+                  onChange={(e) => setNewDiseaseName(e.target.value)}
+                  placeholder="เพิ่มชื่อแท็กโรคใหม่"
+                />
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const name = newDiseaseName.trim();
+                    if (!name) return;
+                    try {
+                      const res = await fetch('/api/diseases', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name })
+                      });
+                      const data = await res.json();
+                      if (res.ok) {
+                        setDiseases((prev) => [...prev, { id: data.id, name: data.name }]);
+                        setNewDiseaseName('');
+                      } else {
+                        alert(data.message || 'เพิ่มแท็กโรคล้มเหลว');
+                      }
+                    } catch { }
+                  }}
+                  className={styles.addButton}
+                >
+                  เพิ่มแท็กโรค
+                </button>
+              </div>
             </div>
           </div>
 

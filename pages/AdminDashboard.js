@@ -27,21 +27,16 @@ export default function AdminDashboard() {
   const router = useRouter()
   const [adminInfo, setAdminInfo] = useState(null)
 
-  // ✅ เก็บสถิติรวมจาก /api/admin-stats (รวม diseaseStats จากหน้าโปรไฟล์)
+  // ✅ เก็บสถิติรวมจาก /api/admin-stats
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalRecipes: 0,
     totalBookmarks: 0,
     totalComments: 0,
     growthRates: null,
-    recent: { users: [], recipes: [], comments: [] },
-    diseaseStatsFromProfiles: [],   // ✅ ใหม่
-    diseaseSource: ''               // ✅ ใหม่
+    recent: { users: [], recipes: [], comments: [] }
   })
 
-  // สถิติ/ข้อมูลเดิมที่คำนวณจาก recipes ตรง ๆ (คงไว้)
-  const [diseaseStats, setDiseaseStats] = useState([])
-  const [mealStats, setMealStats] = useState([])
 
   const [users, setUsers] = useState([])
   const [recipes, setRecipes] = useState([])
@@ -108,11 +103,8 @@ export default function AdminDashboard() {
       setRecipes(recipesData.recipes || [])
       setDiseases(diseasesData.diseases || [])
 
-      // คำนวณสถิติจาก recipes ภายในเครื่อง (คงไว้ตามเดิม)
-      calculateDiseaseStats(recipesData.recipes || [], diseasesData.diseases || [])
-      calculateMealStats(recipesData.recipes || [])
 
-      // ✅ ใช้สถิติรวมจาก /api/admin-stats (รวม diseaseStats จาก "หน้าโปรไฟล์")
+      // ✅ ใช้สถิติรวมจาก /api/admin-stats
       if (statsData.stats) {
         setStats({
           totalUsers: statsData.stats.totalUsers,
@@ -120,9 +112,7 @@ export default function AdminDashboard() {
           totalBookmarks: statsData.stats.totalBookmarks,
           totalComments: statsData.stats.totalComments,
           growthRates: statsData.stats.growthRates,
-          recent: statsData.stats.recent,
-          diseaseStatsFromProfiles: statsData.stats.diseaseStats || [], // ✅ ใช้ค่านี้
-          diseaseSource: statsData.stats.diseaseSource || ''            // ✅ source
+          recent: statsData.stats.recent
         })
       } else {
         // Fallback
@@ -131,9 +121,7 @@ export default function AdminDashboard() {
           totalUsers: usersData.users?.length || 0,
           totalRecipes: recipesData.recipes?.length || 0,
           totalBookmarks: 0,
-          totalComments: 0,
-          diseaseStatsFromProfiles: [],
-          diseaseSource: ''
+          totalComments: 0
         }))
       }
       
@@ -146,22 +134,6 @@ export default function AdminDashboard() {
   }
 
   // ====== Utilities / Calculations ======
-  const calculateDiseaseStats = (recipes, diseases) => {
-    const diseaseCount = {}
-    recipes.forEach(recipe => {
-      if (recipe.Disease_code) {
-        const diseaseId = recipe.Disease_code
-        diseaseCount[diseaseId] = (diseaseCount[diseaseId] || 0) + 1
-      }
-    })
-    const diseaseStats = diseases.map(d => ({
-      id: d.id,
-      name: d.name,
-      count: diseaseCount[d.id] || 0
-    })).sort((a, b) => b.count - a.count)
-    setDiseaseStats(diseaseStats)
-  }
-
   const getMealName = (mealValue) => {
     if (!mealValue) return null
     const mealMap = {
@@ -173,34 +145,6 @@ export default function AdminDashboard() {
       'dinner': 'มื้อเย็น'
     }
     return mealMap[mealValue] || null
-  }
-
-  const calculateMealStats = (recipes) => {
-    const mealCount = {
-      '1': { name: 'มื้อเช้า', count: 0 },
-      '2': { name: 'มื้อกลางวัน', count: 0 },
-      '3': { name: 'มื้อเย็น', count: 0 },
-      'breakfast': { name: 'มื้อเช้า', count: 0 },
-      'lunch': { name: 'มื้อกลางวัน', count: 0 },
-      'dinner': { name: 'มื้อเย็น', count: 0 }
-    }
-    recipes.forEach(recipe => {
-      let mealValue = recipe.Meal
-      if (mealValue === null || mealValue === undefined) return
-      if (typeof mealValue === 'number') mealValue = mealValue.toString()
-      if (mealValue && mealCount[mealValue]) {
-        mealCount[mealValue].count++
-      }
-    })
-    const combinedMealCount = {
-      '1': { name: 'มื้อเช้า', count: mealCount['1'].count + mealCount['breakfast'].count },
-      '2': { name: 'มื้อกลางวัน', count: mealCount['2'].count + mealCount['lunch'].count },
-      '3': { name: 'มื้อเย็น', count: mealCount['3'].count + mealCount['dinner'].count }
-    }
-    const mealStats = Object.entries(combinedMealCount).map(([id, data]) => ({
-      id, name: data.name, count: data.count
-    })).sort((a, b) => b.count - a.count)
-    setMealStats(mealStats)
   }
 
   // ✅ ใช้ diseases state เพื่อแปลงชื่อโรค -> id CSV (กัน error ใน handleUpdateRecipe)
@@ -243,9 +187,6 @@ export default function AdminDashboard() {
         const updatedRecipes = recipes.filter(r => r.Recipe_code !== recipeId)
         setRecipes(updatedRecipes)
         setStats(prev => ({ ...prev, totalRecipes: Math.max(0, prev.totalRecipes - 1) }))
-        // อัปเดตสถิติภายใน
-        calculateMealStats(updatedRecipes)
-        calculateDiseaseStats(updatedRecipes, diseases)
         alert('ลบสูตรอาหารสำเร็จ')
       } else {
         const errorData = await response.json()
@@ -284,8 +225,6 @@ export default function AdminDashboard() {
       if (response.ok) {
         const updated = recipes.map(r => r.Recipe_code === updatedRecipe.Recipe_code ? updatedRecipe : r)
         setRecipes(updated)
-        calculateMealStats(updated)
-        calculateDiseaseStats(updated, diseases)
         setShowEditModal(false)
         setEditingRecipe(null)
         alert('อัปเดตสูตรอาหารสำเร็จ')
@@ -542,97 +481,6 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Recipe Statistics by Disease and Meal */}
-            <div className={styles.recipeStats}>
-              <div className={styles.statsSection}>
-                <h3>สูตรอาหารตามโรค</h3>
-                <div className={styles.statsList}>
-                  {diseaseStats.map((disease, index) => (
-                    <div key={index} className={styles.statItem}>
-                      <div className={styles.statItemContent}>
-                        <span className={styles.statItemName}>{disease.name}</span>
-                        <span className={styles.statItemCount}>{disease.count} สูตร</span>
-                      </div>
-                      <div className={styles.statItemBar}>
-                        <div 
-                          className={styles.statItemProgress}
-                          style={{ 
-                            width: `${diseaseStats.length > 0 ? (disease.count / Math.max(...diseaseStats.map(d => d.count))) * 100 : 0}%` 
-                          }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                  {diseaseStats.length === 0 && (
-                    <p className={styles.noData}>ไม่มีข้อมูลโรค</p>
-                  )}
-                </div>
-              </div>
-
-              <div className={styles.statsSection}>
-                <h3>สูตรอาหารตามมื้อ</h3>
-                <div className={styles.statsList}>
-                  {mealStats.map((meal, index) => (
-                    <div key={index} className={styles.statItem}>
-                      <div className={styles.statItemContent}>
-                        <span className={styles.statItemName}>{meal.name}</span>
-                        <span className={styles.statItemCount}>{meal.count} สูตร</span>
-                      </div>
-                      <div className={styles.statItemBar}>
-                        <div 
-                          className={styles.statItemProgress}
-                          style={{ 
-                            width: `${mealStats.length > 0 && Math.max(...mealStats.map(m => m.count)) > 0 ? (meal.count / Math.max(...mealStats.map(m => m.count))) * 100 : 0}%` 
-                          }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                  {mealStats.length === 0 && (
-                    <p className={styles.noData}>ไม่มีข้อมูลมื้ออาหาร</p>
-                  )}
-                </div>
-              </div>
-
-              {/* ✅ ใหม่: จำนวนสมาชิกตามโรคที่สนใจ (จากหน้าโปรไฟล์) */}
-              <div className={styles.statsSection}>
-                <h3>
-                  จำนวนสมาชิกตามโรคที่สนใจ
-                  {stats.diseaseSource && (
-                    <span className={styles.badge} style={{ marginLeft: 8 }}>
-                    
-                    </span>
-                  )}
-                </h3>
-                <div className={styles.statsList}>
-                  {stats.diseaseStatsFromProfiles?.length > 0 ? (
-                    stats.diseaseStatsFromProfiles.map((item, i) => {
-                      const max = Math.max(...stats.diseaseStatsFromProfiles.map(d => Number(d.member_count) || 0)) || 1
-                      const count = Number(item.member_count) || 0
-                      const percent = Math.round((count / max) * 100)
-                      return (
-                        <div key={i} className={styles.statItem}>
-                          <div className={styles.statItemContent}>
-                            <span className={styles.statItemName}>
-                              {item.disease_name || 'ไม่ระบุ'}
-                            </span>
-                            <span className={styles.statItemCount}>{count} คน</span>
-                          </div>
-                          <div className={styles.statItemBar}>
-                            <div
-                              className={styles.statItemProgress}
-                              style={{ width: `${percent}%` }}
-                            />
-                          </div>
-                        </div>
-                      )
-                    })
-                  ) : (
-                    <p className={styles.noData}>ไม่มีข้อมูลสมาชิกตามโรค</p>
-                  )}
-                </div>
-              </div>
-            </div>
 
             {/* Recent Activity */}
             {stats.recent && (
@@ -816,8 +664,8 @@ export default function AdminDashboard() {
               <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                 <button 
                   onClick={() => setShowDiseaseForm(true)}
-                  className={styles.submitButton}
-                  style={{ margin: 0, padding: '0.75rem 1.5rem' }}
+                  className={styles.addDiseaseBtn}
+                  style={{ margin: 0 }}
                 >
                   <FaPlus /> เพิ่มโรคใหม่
                 </button>
@@ -917,37 +765,108 @@ export default function AdminDashboard() {
           <div className={styles.recipes}>
             <div className={styles.sectionHeader}>
               <h2>จัดการสูตรอาหาร</h2>
+
+              {/* ✅ ปุ่มเพิ่มสูตรอาหาร (คืนกลับมา) */}
+              <Link
+                href="/add-recipe"
+                className={styles.addRecipeBtn}
+                style={{ marginLeft: 'auto' }}
+                title="เพิ่มสูตรอาหาร"
+              >
+                <FaPlus /> เพิ่มสูตรอาหาร
+              </Link>
             </div>
             
-            <div className={styles.recipesGrid}>
+            <div className={styles.recipeGrid}>
               {filteredRecipes.map((recipe, index) => (
-                <div key={index} className={styles.recipeCard}>
-                  <img 
-                    src={recipe.Image || '/images/GF3.jpg'} 
-                    alt={recipe.Recipe_name}
-                    className={styles.recipeImage}
-                  />
-                  <div className={styles.recipeContent}>
-                    <h3>{recipe.Recipe_name}</h3>
-                    <p className={styles.recipeDescription}>
-                      {recipe.Description?.substring(0, 100)}...
-                    </p>
-                    <div className={styles.recipeTags}>
+                <div key={index} className={styles.card}>
+                  <div className={styles.cardMedia}>
+                    <img 
+                      src={recipe.Image || '/images/GF3.jpg'} 
+                      alt={recipe.Recipe_name}
+                    />
+                    <div className={styles.cardOverlay}>
+                      <div className={styles.viewRecipeBtn}>
+                        <FaUtensils /> ดูสูตร
+                      </div>
+                    </div>
+                  </div>
+                  <div className={styles.cardBody}>
+                    <h3 className={styles.cardTitle}>{recipe.Recipe_name}</h3>
+                    {recipe.Description && <p className={styles.cardDesc}>{recipe.Description}</p>}
+                    <div className={styles.cardTags}>
+                      {/* Meal Tags - แสดงด้านบน */}
+                     {recipe.Meal && (
+                       <div className={styles.mealTagsSection}>
+                         <span className={styles.sectionLabel}>มื้อ:</span>
+                         {(() => {
+                           // ทำความสะอาดข้อมูล: ลบช่องว่าง, ลบจุลภาคที่ขึ้นต้น
+                           const cleanMeal = recipe.Meal.replace(/^\s*,+/, '').trim();
+                           return cleanMeal.split(',').map(m => m.trim()).filter(Boolean);
+                         })().map((mealId) => {
+                            const mealIdTrimmed = mealId.trim();
+                            const mealMap = { '1': 'breakfast', '2': 'lunch', '3': 'dinner' };
+                            const mealKey = mealMap[mealIdTrimmed] || mealIdTrimmed;
+                            
+                            // ใช้ mealTypes เหมือนหน้าหลัก
+                            const mealTypes = [
+                              { id: 'breakfast', name: 'มื้อเช้า', color: '#FEF08A' },
+                              { id: 'lunch', name: 'มื้อกลางวัน', color: '#BBF7D0' },
+                              { id: 'dinner', name: 'มื้อเย็น', color: '#DDD6FE' }
+                            ];
+                            
+                            const m = mealTypes.find(x => x.id === mealKey);
+                            
+                            // Fallback: ถ้าไม่เจอใน mealTypes ให้แปลงเป็นไทยเอง
+                            const displayText = m?.name || (() => {
+                              switch (mealKey.toLowerCase()) {
+                                case 'breakfast': return 'มื้อเช้า';
+                                case 'lunch': return 'มื้อกลางวัน';
+                                case 'dinner': return 'มื้อเย็น';
+                                case 'snack': return 'ของว่าง';
+                                case 'dessert': return 'ของหวาน';
+                                default: return mealKey;
+                              }
+                            })();
+                            
+                            return (
+                              <span 
+                                key={`meal-${mealKey}`}
+                                className={styles.mealTag}
+                                style={{ 
+                                  background: m?.color || '#48bb78',
+                                  color: '#000000',
+                                  borderColor: m?.color || '#48bb78',
+                                  padding: '0.15rem 0.5rem',
+                                  borderRadius: '8px',
+                                  fontSize: '0.7rem'
+                                }}
+                                title={displayText}
+                              >
+                                {displayText}
+                              </span>
+                            );
+                         })}
+                       </div>
+                     )}
+                      
+                      {/* Disease Tags - แสดงด้านล่าง */}
                       {recipe.Disease_tags && (
-                        <>
+                        <div className={styles.diseaseTagsSection}>
+                          <span className={styles.sectionLabel}>โรค:</span>
                           {recipe.Disease_tags.split(',').map((tag, i) => {
                             const diseasePalette = ['#FFB6C1', '#ADD8E6', '#FFD700', '#98FB98', '#DDA0DD', '#F0E68C', '#CDE7FF', '#FECACA', '#DCFCE7', '#E9D5FF'];
                             const getDiseaseColor = (id) => diseasePalette[(Number(id) || 0) % diseasePalette.length];
                             return (
                               <span 
                                 key={i} 
-                                className={styles.recipeTag}
+                                className={styles.diseaseTag}
                                 style={{ 
                                   backgroundColor: getDiseaseColor(i),
                                   color: '#000000',
                                   borderColor: getDiseaseColor(i),
-                                  padding: '0.15rem 0.5rem',
-                                  borderRadius: '8px',
+                                  padding: '4px 8px',
+                                  borderRadius: '16px',
                                   fontSize: '0.7rem'
                                 }}
                               >
@@ -955,28 +874,11 @@ export default function AdminDashboard() {
                               </span>
                             );
                           })}
-                        </>
-                      )}
-                      {getMealName(recipe.Meal) && (
-                        <span 
-                          className={styles.mealTag}
-                          style={{ 
-                            background: recipe.Meal === '1' || recipe.Meal === 'breakfast' ? '#FEF08A' : 
-                                       recipe.Meal === '2' || recipe.Meal === 'lunch' ? '#BBF7D0' : 
-                                       recipe.Meal === '3' || recipe.Meal === 'dinner' ? '#DDD6FE' : '#48bb78',
-                            color: '#000000',
-                            borderColor: recipe.Meal === '1' || recipe.Meal === 'breakfast' ? '#FEF08A' : 
-                                       recipe.Meal === '2' || recipe.Meal === 'lunch' ? '#BBF7D0' : 
-                                       recipe.Meal === '3' || recipe.Meal === 'dinner' ? '#DDD6FE' : '#48bb78',
-                            padding: '0.15rem 0.5rem',
-                            borderRadius: '8px',
-                            fontSize: '0.7rem'
-                          }}
-                        >
-                          {getMealName(recipe.Meal)}
-                        </span>
+                        </div>
                       )}
                     </div>
+                    
+                    {/* Admin Actions */}
                     <div className={styles.recipeActions}>
                       <button 
                         className={styles.viewBtn}

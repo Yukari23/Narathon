@@ -101,28 +101,28 @@ export default function ResetPasswordPage() {
         </div>
 
         <form onSubmit={submit} className={styles.form}>
-          {/* ช่องรหัสผ่านใหม่ (ไอคอนตาอยู่ซ้าย) */}
-          <div className={styles.inputGroup}>
-            <button
-              type="button"
-              onClick={() => setShowPw(!showPw)}
-              className={styles.eyeLeftIcon}
-              aria-label="toggle-password"
-              disabled={loading}
-            >
-             
-            </button>
+          {/* ช่องรหัสผ่านใหม่ */}
+          <div className={styles.passwordWrapper}>
             <input
               type={showPw ? 'text' : 'password'}
               name="newPassword"
               placeholder="รหัสผ่านใหม่"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className={`${styles.input} ${styles.inputWithLeftIcon}`}
+              className={styles.input}
               disabled={loading}
               required
               minLength={MIN_LEN}
             />
+            <button
+              type="button"
+              onClick={() => setShowPw(!showPw)}
+              className={styles.eyeIcon}
+              aria-label="toggle-password"
+              disabled={loading}
+            >
+              {showPw ? <FaEyeSlash /> : <FaEye />}
+            </button>
           </div>
 
           {newPassword && (
@@ -131,28 +131,28 @@ export default function ResetPasswordPage() {
             </p>
           )}
 
-          {/* ช่องยืนยันรหัสผ่านใหม่ (ไอคอนตาอยู่ซ้าย) */}
-          <div className={styles.inputGroup}>
-            <button
-              type="button"
-              onClick={() => setShowPw2(!showPw2)}
-              className={styles.eyeLeftIcon}
-              aria-label="toggle-confirm-password"
-              disabled={loading}
-            >
-            
-            </button>
+          {/* ช่องยืนยันรหัสผ่านใหม่ */}
+          <div className={styles.passwordWrapper}>
             <input
               type={showPw2 ? 'text' : 'password'}
               name="confirmPassword"
               placeholder="ยืนยันรหัสผ่านใหม่"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className={`${styles.input} ${styles.inputWithLeftIcon}`}
+              className={styles.input}
               disabled={loading}
               required
               minLength={MIN_LEN}
             />
+            <button
+              type="button"
+              onClick={() => setShowPw2(!showPw2)}
+              className={styles.eyeIcon}
+              aria-label="toggle-confirm-password"
+              disabled={loading}
+            >
+              {showPw2 ? <FaEyeSlash /> : <FaEye />}
+            </button>
           </div>
 
           {/* ข้อความสถานะ */}

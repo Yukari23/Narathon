@@ -89,8 +89,8 @@ export default function Home({ initialRecipes = [], diseaseCategories: diseaseCa
 
   // ===== Data & Filters =====
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedDisease, setSelectedDisease] = useState(null);
-  const [selectedMeal, setSelectedMeal] = useState(null);
+  const [selectedDiseases, setSelectedDiseases] = useState([]);
+  const [selectedMeals, setSelectedMeals] = useState([]);
   const [showDiseasePopup, setShowDiseasePopup] = useState(false);
   const [showMealPopup, setShowMealPopup] = useState(false);
 
@@ -125,11 +125,13 @@ const getMealName = (key) => {
   const q = norm(searchQuery);
 
   return recipes.filter((r) => {
-    // ----- กรองตามโรคที่เลือก (เหมือนเดิม) -----
-    const byDisease = !selectedDisease || (r.diseases || []).includes(Number(selectedDisease.id));
+    // ----- กรองตามโรคที่เลือก (รองรับหลายโรค) -----
+    const byDisease = selectedDiseases.length === 0 || 
+      selectedDiseases.some(disease => (r.diseases || []).includes(Number(disease.id)));
 
-    // ----- กรองตามมื้อที่เลือก (เหมือนเดิม) -----
-    const byMeal = !selectedMeal || (r.mealTypes || []).includes(selectedMeal.id);
+    // ----- กรองตามมื้อที่เลือก (รองรับหลายมื้อ) -----
+    const byMeal = selectedMeals.length === 0 || 
+      selectedMeals.some(meal => (r.mealTypes || []).includes(meal.id));
 
     // ----- ค้นจากช่องค้นหา: ชื่อเมนู / รายละเอียด / ชื่อโรค / ชื่อมื้อ -----
     if (!q) return byDisease && byMeal;
@@ -137,12 +139,12 @@ const getMealName = (key) => {
     const titleStr   = norm(r.title);
     const detailStr  = norm(r.details);
 
-    // รวมชื่อโรคของสูตรนี้ (เช่น “เบาหวาน”, “ไต”, …)
+    // รวมชื่อโรคของสูตรนี้ (เช่น "เบาหวาน", "ไต", …)
     const diseaseNameList = (r.diseases || [])
       .map(id => norm(getDiseaseById(id)?.name))
       .filter(Boolean);
 
-    // รวมชื่อมื้อของสูตรนี้ (เช่น “มื้อเช้า”, “มื้อเย็น”)
+    // รวมชื่อมื้อของสูตรนี้ (เช่น "มื้อเช้า", "มื้อเย็น")
     const mealNameList = (r.mealTypes || [])
       .map(key => norm(getMealName(key)))
       .filter(Boolean);
@@ -155,13 +157,13 @@ const getMealName = (key) => {
 
     return byDisease && byMeal && byQuery;
   });
-}, [recipes, selectedDisease, selectedMeal, searchQuery, diseaseCategories, mealTypes]);
+}, [recipes, selectedDiseases, selectedMeals, searchQuery, diseaseCategories, mealTypes]);
 
 
   const clearFilters = (e) => {
     e?.preventDefault();
-    setSelectedDisease(null);
-    setSelectedMeal(null);
+    setSelectedDiseases([]);
+    setSelectedMeals([]);
     setSearchQuery('');
     setShowDiseasePopup(false);
     setShowMealPopup(false);
@@ -291,25 +293,27 @@ const getMealName = (key) => {
           </div>
         </div>
 
-        {(selectedDisease || selectedMeal) && (
+        {(selectedDiseases.length > 0 || selectedMeals.length > 0) && (
   <div className={styles.activeFilters}>
     <div className={styles.tags}>
-      {selectedDisease && (
+      {selectedDiseases.map((disease, index) => (
         <span
+          key={`disease-${disease.id}`}
           className={styles.tag}
-          style={{ backgroundColor: selectedDisease.color }}
+          style={{ backgroundColor: disease.color }}
         >
-          {selectedDisease.name}
+          {disease.name}
         </span>
-      )}
-      {selectedMeal && (
+      ))}
+      {selectedMeals.map((meal, index) => (
         <span
+          key={`meal-${meal.id}`}
           className={styles.tag}
-          style={{ backgroundColor: selectedMeal.color }}
+          style={{ backgroundColor: meal.color }}
         >
-          {selectedMeal.name}
+          {meal.name}
         </span>
-      )}
+      ))}
     </div>
   </div>
 )}
@@ -319,12 +323,15 @@ const getMealName = (key) => {
       <section className={styles.section}>
         <div className={styles.sectionHead}>
           <h2 className={styles.sectionTitle}>
-            {selectedDisease ? `สูตรสำหรับ${selectedDisease.name}` : 'สูตรอาหารแนะนำ'}
+            {selectedDiseases.length > 0 ? 
+              `สูตรสำหรับ${selectedDiseases.map(d => d.name).join(', ')}` : 
+              'สูตรอาหารแนะนำ'
+            }
           </h2>
           <div className={styles.recipeCount}>
             {filteredRecipes.length} สูตร
           </div>
-          {(selectedDisease || selectedMeal || searchQuery) && (
+          {(selectedDiseases.length > 0 || selectedMeals.length > 0 || searchQuery) && (
             <button type="button" className={styles.clearFiltersBtn} onClick={clearFilters}>
               <FaTimes /> ล้างตัวกรอง
             </button>
@@ -356,51 +363,106 @@ const getMealName = (key) => {
                   <h3 className={styles.cardTitle}>{r.title}</h3>
                   {r.details && <p className={styles.cardDesc}>{r.details}</p>}
                   <div className={styles.cardTags}>
-                    {/* Disease Tags */}
-                    {(r.diseases||[]).map((diseaseId)=>{
-                      const disease = diseaseCategories.find(x=>x.id===diseaseId);
-                      const diseasePalette = ['#FFB6C1', '#ADD8E6', '#FFD700', '#98FB98', '#DDA0DD', '#F0E68C', '#CDE7FF', '#FECACA', '#DCFCE7', '#E9D5FF'];
-                      const getDiseaseColor = (id) => diseasePalette[(Number(id) || 0) % diseasePalette.length];
-                      return disease ? (
-                        <span
-                          key={diseaseId}
-                          className={styles.diseaseTag}
-                          style={{ 
-                            backgroundColor: getDiseaseColor(diseaseId),
-                            color: '#000000',
-                            borderColor: getDiseaseColor(diseaseId),
-                            padding: '4px 8px',
-                            borderRadius: '16px',
-                            fontSize: '0.7rem'
-                          }}
-                          title={disease.name}
-                        >
-                          {disease.name}
-                        </span>
-                      ) : null;
-                    })}
+                    {/* Meal Tags - แสดงด้านบน */}
+                    {(r.mealTypes||[]).length > 0 && (
+                      <div className={styles.mealTagsSection}>
+                        <span className={styles.sectionLabel}>มื้อ:</span>
+                        {(r.mealTypes||[]).map((mt, index)=> {
+                          // ใช้สีจาก mealTypes array ตามลำดับ
+                          const colors = ['#FEF08A', '#BBF7D0', '#DDD6FE']; // เหลือง, เขียวอ่อน, ม่วงอ่อน
+                          const color = colors[index % colors.length];
+                          
+                          // Fallback: ถ้าข้อมูลยังเป็นภาษาอังกฤษ ให้แปลงเป็นไทย
+                          const displayText = (() => {
+                            if (['breakfast', 'lunch', 'dinner', 'snack', 'dessert'].includes(String(mt).toLowerCase())) {
+                              const translateMeal = (meal) => {
+                                switch ((meal || '').toLowerCase()) {
+                                  case 'breakfast': return 'มื้อเช้า';
+                                  case 'lunch': return 'มื้อกลางวัน';
+                                  case 'dinner': return 'มื้อเย็น';
+                                  case 'snack': return 'ของว่าง';
+                                  case 'dessert': return 'ของหวาน';
+                                  default: return meal || 'ไม่ระบุ';
+                                }
+                              };
+                              return translateMeal(mt);
+                            }
+                            return mt;
+                          })();
+                          
+                          return (
+                            <span
+                              key={`meal-${index}`}
+                              className={styles.mealTag}
+                              style={{ 
+                                background: color,
+                                color: '#000000',
+                                borderColor: color,
+                                padding: '0.15rem 0.5rem',
+                                borderRadius: '8px',
+                                fontSize: '0.7rem'
+                              }}
+                              title={displayText}
+                            >
+                              {displayText}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
                     
-                    {/* Meal Tags */}
-                    {(r.mealTypes||[]).map((mt)=> {
-                      const m = mealTypes.find(x=>x.id===mt);
-                      return (
-                        <span
-                          key={mt}
-                          className={styles.mealTag}
-                          style={{ 
-                            background: m?.color || '#48bb78',
-                            color: '#000000',
-                            borderColor: m?.color || '#48bb78',
-                            padding: '0.15rem 0.5rem',
-                            borderRadius: '8px',
-                            fontSize: '0.7rem'
-                          }}
-                          title={m?.name}
-                        >
-                          {m?.name}
-                        </span>
-                      );
-                    })}
+                    {/* Disease Tags - แสดงด้านล่าง */}
+                    {((r.diseases||[]).length > 0 || (r.tags||[]).length > 0) && (
+                      <div className={styles.diseaseTagsSection}>
+                        <span className={styles.sectionLabel}>โรค:</span>
+                        {/* Disease Tags from Disease_code */}
+                        {(r.diseases||[]).map((diseaseId)=>{
+                          const disease = diseaseCategories.find(x=>x.id===diseaseId);
+                          const diseasePalette = ['#FFB6C1', '#ADD8E6', '#FFD700', '#98FB98', '#DDA0DD', '#F0E68C', '#CDE7FF', '#FECACA', '#DCFCE7', '#E9D5FF'];
+                          const getDiseaseColor = (id) => diseasePalette[(Number(id) || 0) % diseasePalette.length];
+                          return disease ? (
+                            <span
+                              key={`disease-${diseaseId}`}
+                              className={styles.diseaseTag}
+                              style={{ 
+                                backgroundColor: getDiseaseColor(diseaseId),
+                                color: '#000000',
+                                borderColor: getDiseaseColor(diseaseId),
+                                padding: '4px 8px',
+                                borderRadius: '16px',
+                                fontSize: '0.7rem'
+                              }}
+                              title={disease.name}
+                            >
+                              {disease.name}
+                            </span>
+                          ) : null;
+                        })}
+                        
+                        {/* Disease Tags from Disease_tags */}
+                        {(r.tags||[]).map((tag, index)=>{
+                          const diseasePalette = ['#FFB6C1', '#ADD8E6', '#FFD700', '#98FB98', '#DDA0DD', '#F0E68C', '#CDE7FF', '#FECACA', '#DCFCE7', '#E9D5FF'];
+                          const getDiseaseColor = (idx) => diseasePalette[idx % diseasePalette.length];
+                          return (
+                            <span
+                              key={`tag-${index}`}
+                              className={styles.diseaseTag}
+                              style={{ 
+                                backgroundColor: getDiseaseColor(index),
+                                color: '#000000',
+                                borderColor: getDiseaseColor(index),
+                                padding: '4px 8px',
+                                borderRadius: '16px',
+                                fontSize: '0.7rem'
+                              }}
+                              title={tag}
+                            >
+                              {tag}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
               </Link>
@@ -418,23 +480,37 @@ const getMealName = (key) => {
         <div className={styles.popupOverlay} role="dialog" aria-modal>
           <div className={styles.popup}>
             <div className={styles.popupHeader}>
-              <h3>เลือกตามโรค</h3>
+              <h3>เลือกตามโรค (สามารถเลือกหลายโรคได้)</h3>
               <button className={styles.closeBtn} onClick={()=>setShowDiseasePopup(false)} aria-label="ปิด"><FaTimes/></button>
             </div>
             <div className={styles.popupContent}>
               <div className={styles.categoryGrid}>
-                {diseaseCategories.map((c)=> (
-                  <button
-                    key={c.id}
-                    className={styles.categoryCard}
-                    style={{ background: c.color }}
-                    onClick={() => { setSelectedDisease(c); setShowDiseasePopup(false); }}
-                    title={`เลือกโรค: ${c.name}`}
-                    aria-label={`เลือกโรค ${c.name}`}
-                  >
-                    <span>{c.name}</span>
-                  </button>
-                ))}
+                {diseaseCategories.map((c)=> {
+                  const isSelected = selectedDiseases.some(d => d.id === c.id);
+                  return (
+                    <button
+                      key={c.id}
+                      className={`${styles.categoryCard} ${isSelected ? styles.selected : ''}`}
+                      style={{ 
+                        background: isSelected ? c.color : 'transparent',
+                        borderColor: c.color,
+                        borderWidth: '2px',
+                        borderStyle: 'solid'
+                      }}
+                      onClick={() => {
+                        if (isSelected) {
+                          setSelectedDiseases(prev => prev.filter(d => d.id !== c.id));
+                        } else {
+                          setSelectedDiseases(prev => [...prev, c]);
+                        }
+                      }}
+                      title={`${isSelected ? 'ยกเลิกเลือก' : 'เลือก'}โรค: ${c.name}`}
+                      aria-label={`${isSelected ? 'ยกเลิกเลือก' : 'เลือก'}โรค ${c.name}`}
+                    >
+                      <span>{c.name}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -446,23 +522,37 @@ const getMealName = (key) => {
         <div className={styles.popupOverlay} role="dialog" aria-modal>
           <div className={styles.popup}>
             <div className={styles.popupHeader}>
-              <h3>เลือกตามมื้ออาหาร</h3>
+              <h3>เลือกตามมื้ออาหาร (สามารถเลือกหลายมื้อได้)</h3>
               <button className={styles.closeBtn} onClick={()=>setShowMealPopup(false)} aria-label="ปิด"><FaTimes/></button>
             </div>
             <div className={styles.popupContent}>
               <div className={styles.mealGrid}>
-                {mealTypes.map((m)=> (
-                  <button
-                    key={m.id}
-                    className={`${styles.mealCard} ${styles[m.id]}`}
-                    style={{ background: m.color }}
-                    onClick={() => { setSelectedMeal(m); setShowMealPopup(false); }}
-                    title={`เลือกมื้อ: ${m.name}`}
-                    aria-label={`เลือกมื้อ ${m.name}`}
-                  >
-                    <span>{m.name}</span>
-                  </button>
-                ))}
+                {mealTypes.map((m)=> {
+                  const isSelected = selectedMeals.some(meal => meal.id === m.id);
+                  return (
+                    <button
+                      key={m.id}
+                      className={`${styles.mealCard} ${styles[m.id]} ${isSelected ? styles.selected : ''}`}
+                      style={{ 
+                        background: isSelected ? m.color : 'transparent',
+                        borderColor: m.color,
+                        borderWidth: '2px',
+                        borderStyle: 'solid'
+                      }}
+                      onClick={() => {
+                        if (isSelected) {
+                          setSelectedMeals(prev => prev.filter(meal => meal.id !== m.id));
+                        } else {
+                          setSelectedMeals(prev => [...prev, m]);
+                        }
+                      }}
+                      title={`${isSelected ? 'ยกเลิกเลือก' : 'เลือก'}มื้อ: ${m.name}`}
+                      aria-label={`${isSelected ? 'ยกเลิกเลือก' : 'เลือก'}มื้อ ${m.name}`}
+                    >
+                      <span>{m.name}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -482,17 +572,35 @@ export async function getServerSideProps(){
     if(['breakfast','lunch','dinner'].includes(m)) return m;
     return '';
   };
+
+  // แปลงชื่อมื้ออาหารจากอังกฤษเป็นไทย
+  const translateMeal = (meal) => {
+    switch ((meal || '').toLowerCase()) {
+      case 'breakfast':
+        return 'มื้อเช้า';
+      case 'lunch':
+        return 'มื้อกลางวัน';
+      case 'dinner':
+        return 'มื้อเย็น';
+      case 'snack':
+        return 'ของว่าง';
+      case 'dessert':
+        return 'ของหวาน';
+      default:
+        return meal || 'ไม่ระบุ';
+    }
+  };
   try {
     let pool;
-    try { const mod = await import('../lib/db'); pool = mod.default || mod; }
-    catch { const mod2 = await import('./lib/db'); pool = mod2.default || mod2; }
+    try { const mod = await import('./lib/db'); pool = mod.default || mod; }
+    catch { const mod2 = await import('../lib/db'); pool = mod2.default || mod2; }
 
     let recipesRows = [];
     let diseasesRows = [];
 
     try {
       [recipesRows] = await pool.execute(
-        `SELECT Recipe_code, Image, details, Recipe_name, Meal, Disease_code 
+        `SELECT Recipe_code, Image, details, Recipe_name, Meal, Disease_code, Disease_tags 
          FROM recipes
          ORDER BY Recipe_code DESC`
       );
@@ -503,7 +611,7 @@ export async function getServerSideProps(){
         waitForConnections:true,connectionLimit:10,queueLimit:0
       });
       const r = await fb.execute(
-        'SELECT `Recipe_code`,`Image`,`details`,`Recipe_name`,`Meal`,`Disease_code` FROM `recipes`'
+        'SELECT `Recipe_code`,`Image`,`details`,`Recipe_name`,`Meal`,`Disease_code`,`Disease_tags` FROM `recipes`'
       );
       recipesRows = r[0];
     }
@@ -516,14 +624,58 @@ export async function getServerSideProps(){
       diseasesRows = [];
     }
 
-    const initialRecipes = (recipesRows||[]).map((r)=>({
-      id: Number(r?.Recipe_code),
-      title: r?.Recipe_name || 'ไม่ทราบชื่อ',
-      image: r?.Image || '/images/GF3.jpg',
-      details: r?.details || '',
-      mealTypes: mealIdToKey(r?.Meal) ? [mealIdToKey(r?.Meal)] : [],
-      diseases: r?.Disease_code ? [Number(r.Disease_code)] : [],
-    })).filter(x=>Number.isFinite(x.id));
+    const initialRecipes = (recipesRows||[]).map((r)=>{
+      // แปลง Disease_tags จาก string เป็น array
+      const diseaseTags = r?.Disease_tags ? 
+        String(r.Disease_tags).split(',').map(tag => tag.trim()).filter(Boolean) : [];
+      
+      // แปลง Meal จาก string เป็น array (รองรับหลายมื้อ)
+      let mealTypesArray = [];
+      if (r?.Meal) {
+        const mealString = String(r.Meal);
+        // ตรวจสอบว่าเป็น JSON array หรือไม่
+        if (mealString.startsWith('[') && mealString.endsWith(']')) {
+          try {
+            const parsedMeals = JSON.parse(mealString);
+            if (Array.isArray(parsedMeals)) {
+              mealTypesArray = parsedMeals.map(meal => {
+                // ถ้าเป็นชื่อมื้อภาษาอังกฤษโดยตรง ให้แปลงเป็นไทยเลย
+                if (['breakfast', 'lunch', 'dinner', 'snack', 'dessert'].includes(String(meal).toLowerCase())) {
+                  return translateMeal(meal);
+                }
+                // ถ้าเป็นตัวเลข ให้แปลงเป็น key ก่อน แล้วค่อยแปลงเป็นไทย
+                return translateMeal(mealIdToKey(meal));
+              }).filter(Boolean);
+            }
+          } catch (e) {
+            // ถ้า parse ไม่ได้ ให้ใช้วิธีเดิม
+            mealTypesArray = mealIdToKey(mealString) ? [translateMeal(mealIdToKey(mealString))] : [];
+          }
+        } else {
+          // ถ้าเป็น string ปกติ (คั่นด้วยจุลภาค)
+          const meals = mealString.split(',').map(m => m.trim()).filter(Boolean);
+          mealTypesArray = meals.map(meal => {
+            // ถ้าเป็นชื่อมื้อภาษาอังกฤษโดยตรง ให้แปลงเป็นไทยเลย
+            if (['breakfast', 'lunch', 'dinner', 'snack', 'dessert'].includes(meal.toLowerCase())) {
+              return translateMeal(meal);
+            }
+            // ถ้าเป็นตัวเลข ให้แปลงเป็น key ก่อน แล้วค่อยแปลงเป็นไทย
+            return translateMeal(mealIdToKey(meal));
+          }).filter(Boolean);
+        }
+      }
+      
+
+      return {
+        id: Number(r?.Recipe_code),
+        title: r?.Recipe_name || 'ไม่ทราบชื่อ',
+        image: r?.Image || '/images/GF3.jpg',
+        details: r?.details || '',
+        mealTypes: mealTypesArray,
+        diseases: r?.Disease_code ? [Number(r.Disease_code)] : [],
+        tags: diseaseTags, // เพิ่ม tags array
+      };
+    }).filter(x=>Number.isFinite(x.id));
 
     const diseaseCategories = (diseasesRows||[]).map((d,idx)=>({
       id: Number(d.id),

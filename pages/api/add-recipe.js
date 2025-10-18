@@ -104,9 +104,21 @@ export default async function handler(req, res) {
 
     // ===== ตรวจสอบ & เตรียมค่าอื่น ๆ =====
     const allowedMeals = new Set(['breakfast', 'lunch', 'dinner']);
-    if (Meal && !allowedMeals.has(Meal)) {
-      return res.status(400).json({ message: 'ค่า Meal ต้องเป็น breakfast, lunch, หรือ dinner' });
+    
+    // แปลง Meal จาก string (คั่นด้วยจุลภาค) เป็น array
+    let mealArray = [];
+    if (Meal) {
+      mealArray = Meal.split(',').map(m => m.trim()).filter(Boolean);
+      // ตรวจสอบว่าทุกมื้อที่ส่งมาเป็นค่าที่อนุญาต
+      for (const meal of mealArray) {
+        if (!allowedMeals.has(meal)) {
+          return res.status(400).json({ message: `ค่า Meal "${meal}" ต้องเป็น breakfast, lunch, หรือ dinner` });
+        }
+      }
     }
+    
+    // ใช้มื้อทั้งหมด (คั่นด้วยจุลภาค) สำหรับระบบใหม่
+    const mealsString = mealArray.join(',');
 
     const Disease_code =
       Disease_code_raw === undefined || Disease_code_raw === ''
@@ -149,7 +161,7 @@ export default async function handler(req, res) {
       ImageSafe,
       DetailsSafe,
       RecipeNameSafe,
-      Meal || null,
+      mealsString || null,
       MethodSafe,
       RawMaterialSafe,
       DiseaseTagsSafe,

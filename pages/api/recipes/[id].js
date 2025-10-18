@@ -69,15 +69,34 @@ export default async function handler(req, res) {
       const Recipe_name = (fields.Recipe_name?.[0] ?? fields.Recipe_name ?? '').toString();
       const details = (fields.details?.[0] ?? fields.details ?? '').toString();
 
-      // meal: รับทั้ง '1'|'2'|'3' หรือ 'breakfast'|'lunch'|'dinner'
+      // meal: รองรับหลายมื้อ (คั่นด้วยจุลภาค)
       const mealRaw = (fields.Meal?.[0] ?? fields.Meal ?? '').toString().trim();
-      const mealMap = { '1': 'breakfast', '2': 'lunch', '3': 'dinner' };
-      const Meal = mealMap[mealRaw] || mealRaw || null;
+      let Meal = null;
+      
+      if (mealRaw) {
+        // ถ้าเป็น string คั่นด้วยจุลภาค (เช่น "breakfast,lunch,dinner")
+        if (mealRaw.includes(',')) {
+          Meal = mealRaw; // เก็บเป็น string คั่นด้วยจุลภาค
+        } else {
+          // ถ้าเป็นมื้อเดียว
+          const mealMap = { '1': 'breakfast', '2': 'lunch', '3': 'dinner' };
+          Meal = mealMap[mealRaw] || mealRaw || null;
+        }
+      }
 
       const methodField = (fields.method?.[0] ?? fields.method ?? '');
       const rawField = (fields.raw_material?.[0] ?? fields.raw_material ?? '');
       const Disease_tags = (fields.Disease_tags?.[0] ?? fields.Disease_tags ?? '').toString();
       const Disease_code = (fields.Disease_code?.[0] ?? fields.Disease_code ?? null);
+
+      // Debug: แสดงข้อมูลที่รับมา
+      console.log('API received data:');
+      console.log('- Recipe_name:', Recipe_name);
+      console.log('- details:', details);
+      console.log('- Meal (raw):', mealRaw);
+      console.log('- Meal (processed):', Meal);
+      console.log('- Disease_tags:', Disease_tags);
+      console.log('- Disease_code:', Disease_code);
 
       // รูปภาพ (ถ้ามี)
       let Image = null;

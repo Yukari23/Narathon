@@ -5,20 +5,29 @@
    - คง selector เดิมทั้งหมดเพื่อไม่กระทบ markup
    =========================== */
 
-/* ---------------------------
-   Variables / Helpers (ถ้ามีในโครงการ)
-   --------------------------- */
-/* ใช้ตัวแปรจากโปรเจค (อย่าลืมกำหนดใน :root หากยังไม่มี) */
-/* ตัวอย่าง: --spacing-xl, --shadow-lg, --primary-500 เป็นต้น */
-
 /* ===========================
    Base
    =========================== */
 .container {
   /* คอนเทนเนอร์หลักของแดชบอร์ด */
-  min-height: 100vh; /* ให้ความสูงขั้นต่ำเท่ากับความสูงหน้าจอ */
-  background: linear-gradient(135deg, var(--secondary-900), var(--primary-700), var(--primary-600));
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--primary-900), var(--primary-800), var(--secondary-800));
   font-family: 'Kanit', -apple-system, BlinkMacSystemFont, sans-serif;
+  position: relative;
+}
+
+.container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(14, 165, 233, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(139, 92, 246, 0.05) 0%, transparent 50%);
+  pointer-events: none;
 }
 
 /* ===========================
@@ -26,19 +35,19 @@
    =========================== */
 .header {
   /* แถบหัวด้านบน ติดบน viewport */
-  background: rgba(255,255,255,0.95);
-  backdrop-filter: blur(12px);
-  box-shadow: var(--shadow-lg);
-  padding: var(--spacing-md) 0;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  padding: var(--spacing-lg) 0;
   position: sticky;
   top: 0;
   z-index: 100;
-  border-bottom: 1px solid var(--border-light);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .headerContent {
   /* เนื้อหาใน header จัดกึ่งกลางและกระจายซ้าย-ขวา */
-  max-width: 1200px;
+  max-width: 100%;
   margin: 0 auto;
   padding: 0 var(--spacing-xl);
   display: flex;
@@ -49,13 +58,14 @@
 .header h1 {
   /* หัวเรื่องหลักใน header ใช้ gradient clip */
   color: var(--text-primary);
-  font-size: 2rem;
-  font-weight: 700;
+  font-size: 2.25rem;
+  font-weight: 800;
   margin: 0;
-  background: linear-gradient(135deg, var(--secondary-800), var(--primary-600));
+  background: linear-gradient(135deg, var(--primary-600), var(--primary-700), var(--secondary-700));
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  letter-spacing: -0.025em;
 }
 
 /* ข้อมูลแอดมิน (ชื่อ / อวาตาร์) */
@@ -74,37 +84,42 @@
   background: linear-gradient(135deg, var(--error-500), var(--error-600));
   color: var(--text-inverse);
   border: none;
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-radius: var(--radius-lg);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-xl);
   cursor: pointer;
   font-weight: 600;
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
   transition: all var(--transition-normal);
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  font-size: 0.95rem;
 }
 .logoutBtn:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+  /* ไม่เปลี่ยนสีพื้นหลังเมื่อ hover */
 }
 
 /* ===========================
    Tabs
    =========================== */
 .tabs {
-  background: rgba(255,255,255,0.9);
-  backdrop-filter: blur(12px);
-  padding: 0 var(--spacing-xl);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  padding: 0 20px;
   display: flex;
   gap: 0;
-  border-bottom: 1px solid var(--border-light);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  max-width: 100%;
+  margin: 0 auto;
 }
 
 .tab {
   background: none;
   border: none;
-  padding: var(--spacing-md) var(--spacing-xl);
+  padding: var(--spacing-lg) var(--spacing-xl);
   cursor: pointer;
   font-size: 1rem;
   font-weight: 600;
@@ -114,24 +129,26 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
+  position: relative;
 }
 
 .tab:hover {
-  color: var(--text-secondary);
-  background: var(--background-tertiary);
+  color: var(--primary-600);
+  background: rgba(14, 165, 233, 0.05);
 }
 
 .tab.active {
   color: var(--primary-600);
   border-bottom-color: var(--primary-500);
-  background: var(--primary-50);
+  background: rgba(14, 165, 233, 0.08);
+  font-weight: 700;
 }
 
 /* ===========================
    Layout
    =========================== */
 .main {
-  max-width: 1200px;
+  max-width: 100%;
   margin: 0 auto;
   padding: var(--spacing-xl);
 }
@@ -168,9 +185,12 @@
    =========================== */
 .overview h2 {
   color: white;
-  font-size: 2rem;
-  margin-bottom: 2rem;
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: var(--spacing-2xl);
   text-align: center;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  letter-spacing: -0.025em;
 }
 
 .statsGrid {
@@ -181,39 +201,57 @@
 }
 
 .statCard {
-  background: rgba(255,255,255,0.95);
-  backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20px);
   border-radius: var(--radius-2xl);
   padding: var(--spacing-2xl);
   display: flex;
   align-items: center;
   gap: var(--spacing-lg);
-  box-shadow: var(--shadow-lg);
-  border: 1px solid var(--border-light);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.statCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-500), var(--primary-600));
 }
 
 .statCard:hover {
-  transform: translateY(-5px);
-  box-shadow: var(--shadow-xl);
+  transform: translateY(-8px);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
 }
 
 .statIcon {
-  font-size: 3rem;
+  font-size: 3.5rem;
   color: var(--primary-500);
+  filter: drop-shadow(0 2px 4px rgba(14, 165, 233, 0.2));
 }
 
 .statContent h3 {
-  font-size: 2.5rem;
-  font-weight: 700;
+  font-size: 2.75rem;
+  font-weight: 800;
   color: var(--text-primary);
   margin: 0;
   line-height: 1;
+  background: linear-gradient(135deg, var(--primary-600), var(--secondary-700));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .statContent p {
   color: var(--text-secondary);
-  font-size: 1rem;
+  font-size: 1.1rem;
+  font-weight: 500;
   margin: var(--spacing-sm) 0 0 0;
 }
 
@@ -321,6 +359,7 @@
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -340,15 +379,19 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: var(--spacing-2xl);
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-lg) 0;
 }
 
 .sectionHeader h2 {
   color: white;
-  font-size: 1.8rem;
+  font-size: 2rem;
+  font-weight: 700;
   margin: 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  letter-spacing: -0.025em;
 }
 
 .headerActions {
@@ -358,27 +401,100 @@
   flex-wrap: wrap;
 }
 
+/* ===========================
+   Enhanced Button Styles
+   =========================== */
 .addRecipeBtn {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  background: linear-gradient(135deg, #10b981, #059669);
+  gap: var(--spacing-sm);
+  background: linear-gradient(135deg, var(--success-500), var(--success-600));
   color: white;
   text-decoration: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 0.9rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(16,185,129,0.3);
-  border: 2px solid transparent;
+  padding: var(--spacing-lg) var(--spacing-2xl);
+  border-radius: var(--radius-2xl);
+  font-weight: 700;
+  font-size: 1rem;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 8px 25px rgba(34, 197, 94, 0.4);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.addRecipeBtn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.addRecipeBtn:hover::before {
+  left: 100%;
 }
 
 .addRecipeBtn:hover {
-  background: linear-gradient(135deg, #059669, #047857);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(16,185,129,0.4);
-  border-color: rgba(255,255,255,0.2);
+  /* ไม่เปลี่ยนสีพื้นหลังเมื่อ hover */
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 12px 35px rgba(34, 197, 94, 0.5);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.addRecipeBtn:active {
+  transform: translateY(-1px) scale(0.98);
+  transition: all 0.1s ease;
+}
+
+/* Add New Disease Button */
+.addDiseaseBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+  color: white;
+  text-decoration: none;
+  padding: var(--spacing-lg) var(--spacing-2xl);
+  border-radius: var(--radius-2xl);
+  font-weight: 700;
+  font-size: 1rem;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 8px 25px rgba(14, 165, 233, 0.4);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.addDiseaseBtn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.addDiseaseBtn:hover::before {
+  left: 100%;
+}
+
+.addDiseaseBtn:hover {
+  /* ไม่เปลี่ยนสีพื้นหลังเมื่อ hover */
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 12px 35px rgba(14, 165, 233, 0.5);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.addDiseaseBtn:active {
+  transform: translateY(-1px) scale(0.98);
+  transition: all 0.1s ease;
 }
 
 /* Search */
@@ -389,25 +505,27 @@
 }
 
 .searchBox input {
-  background: rgba(255,255,255,0.9);
-  border: none;
-  padding: 0.75rem 1rem 0.75rem 3rem;
-  border-radius: 25px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-lg) 3rem;
+  border-radius: var(--radius-2xl);
   font-size: 1rem;
-  width: 300px;
+  width: 320px;
   outline: none;
-  transition: all 0.3s ease;
+  transition: all var(--transition-normal);
+  backdrop-filter: blur(10px);
 }
 
 .searchBox input:focus {
   background: white;
-  box-shadow: 0 0 0 3px rgba(102,126,234,0.3);
+  border-color: var(--primary-300);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
 }
 
 .searchIcon {
   position: absolute;
-  left: 1rem;
-  color: #718096;
+  left: var(--spacing-lg);
+  color: var(--text-tertiary);
   font-size: 1rem;
 }
 
@@ -474,49 +592,55 @@
    =========================== */
 .actions {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
 }
 
 .actions button,
 .recipeActions button {
   border: none;
-  padding: 0.5rem;
-  border-radius: 8px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-lg);
   cursor: pointer;
   font-size: 0.9rem;
-  transition: all 0.3s ease;
+  font-weight: 600;
+  transition: all var(--transition-normal);
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 40px;
-  height: 40px;
+  gap: var(--spacing-xs);
+  min-width: 44px;
+  height: 44px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .editBtn {
-  background: #4299e1;
+  background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
   color: white;
 }
 .editBtn:hover {
-  background: #3182ce;
+  /* ไม่เปลี่ยนสีพื้นหลังเมื่อ hover */
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
 }
 
 .deleteBtn {
-  background: #e53e3e;
+  background: linear-gradient(135deg, var(--error-500), var(--error-600));
   color: white;
 }
 .deleteBtn:hover {
-  background: #c53030;
+  /* ไม่เปลี่ยนสีพื้นหลังเมื่อ hover */
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
 .viewBtn {
-  background: #38a169;
+  background: linear-gradient(135deg, var(--success-500), var(--success-600));
   color: white;
 }
 .viewBtn:hover {
-  background: #2f855a;
+  /* ไม่เปลี่ยนสีพื้นหลังเมื่อ hover */
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
 }
 
 /* ===========================
@@ -674,38 +798,41 @@
 .editForm {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--spacing-lg);
 }
 
 .formGroup {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
 }
 
 .formGroup label {
   font-weight: 600;
-  color: #4a5568;
-  font-size: 0.9rem;
+  color: var(--text-primary);
+  font-size: 1rem;
 }
 
 .formGroup input,
 .formGroup textarea,
 .formGroup select {
-  padding: 0.75rem;
-  border: 2px solid #e2e8f0;
-  border-radius: 8px;
+  padding: var(--spacing-lg);
+  border: 2px solid var(--border-light);
+  border-radius: var(--radius-lg);
   font-size: 1rem;
-  transition: all 0.3s ease;
+  transition: all var(--transition-normal);
   font-family: inherit;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
 }
 
 .formGroup input:focus,
 .formGroup textarea:focus,
 .formGroup select:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+  border-color: var(--primary-300);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+  background: white;
 }
 
 .formGroup textarea {
@@ -715,86 +842,134 @@
 
 .formActions {
   display: flex;
-  gap: 1rem;
+  gap: var(--spacing-lg);
   justify-content: flex-end;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e2e8f0;
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--border-light);
 }
 
 .cancelBtn {
-  background: #e2e8f0;
-  color: #4a5568;
+  background: var(--secondary-200);
+  color: var(--text-secondary);
   border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-radius: var(--radius-lg);
   cursor: pointer;
-  font-weight: 500;
-  transition: all 0.3s ease;
+  font-weight: 600;
+  transition: all var(--transition-normal);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.cancelBtn:hover { background: #cbd5e0; }
+.cancelBtn:hover { 
+  background: var(--secondary-300); 
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
 
 .saveBtn {
-  background: #667eea;
+  background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
   color: white;
   border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-radius: var(--radius-lg);
   cursor: pointer;
-  font-weight: 500;
-  transition: all 0.3s ease;
+  font-weight: 600;
+  transition: all var(--transition-normal);
+  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
 }
 
-.saveBtn:hover { background: #5a67d8; transform: translateY(-1px); }
+.saveBtn:hover { 
+  background: linear-gradient(135deg, var(--primary-600), var(--primary-700)); 
+  transform: translateY(-1px); 
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);
+}
 
 /* ===========================
    Recipe statistics
    =========================== */
 .recipeStats {
-  margin-top: 2rem;
+  margin-top: var(--spacing-2xl);
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 2rem;
+  gap: var(--spacing-2xl);
 }
 
 .statsSection {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius-2xl);
+  padding: var(--spacing-2xl);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.statsSection::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-500), var(--primary-600));
 }
 
 .statsSection h3 {
-  color: #2d3748;
-  margin-bottom: 1.5rem;
-  font-size: 1.25rem;
-  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-xl);
+  font-size: 1.5rem;
+  font-weight: 700;
   text-align: center;
+  background: linear-gradient(135deg, var(--primary-600), var(--secondary-700));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-.statsList { display: flex; flex-direction: column; gap: 1rem; }
+.statsList { 
+  display: flex; 
+  flex-direction: column; 
+  gap: var(--spacing-lg); 
+}
 
-.statItem { display: flex; flex-direction: column; gap: 0.5rem; }
+.statItem { 
+  display: flex; 
+  flex-direction: column; 
+  gap: var(--spacing-sm); 
+}
 
-.statItemContent { display: flex; justify-content: space-between; align-items: center; }
+.statItemContent { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+}
 
-.statItemName { font-weight: 600; color: #2d3748; font-size: 0.9rem; }
+.statItemName { 
+  font-weight: 600; 
+  color: var(--text-primary); 
+  font-size: 1rem; 
+}
 
-.statItemCount { color: #667eea; font-weight: 700; font-size: 0.9rem; }
+.statItemCount { 
+  color: var(--primary-600); 
+  font-weight: 700; 
+  font-size: 1rem; 
+}
 
 .statItemBar {
-  height: 8px;
-  background: #e2e8f0;
-  border-radius: 4px;
+  height: 10px;
+  background: var(--secondary-200);
+  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
 .statItemProgress {
   height: 100%;
-  background: linear-gradient(90deg, #667eea, #764ba2);
-  border-radius: 4px;
-  transition: width 0.3s ease;
+  background: linear-gradient(90deg, var(--primary-500), var(--primary-600));
+  border-radius: var(--radius-lg);
+  transition: width var(--transition-normal);
 }
 
 .noData {
@@ -806,29 +981,311 @@
 }
 
 /* ===========================
+   Recipe Cards (เหมือนหน้าหลัก)
+   =========================== */
+.recipeGrid { 
+  display: grid; 
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); 
+  gap: var(--spacing-2xl); 
+}
+
+.card { 
+  display: flex; 
+  flex-direction: column; 
+  border: 1px solid rgba(255, 255, 255, 0.2); 
+  border-radius: var(--radius-2xl); 
+  overflow: hidden; 
+  background: rgba(255, 255, 255, 0.98); 
+  text-decoration: none; 
+  color: inherit; 
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); 
+  transition: all var(--transition-normal); 
+  position: relative;
+  backdrop-filter: blur(20px);
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-500), var(--primary-600));
+}
+
+.card:hover { 
+  transform: translateY(-8px); 
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15); 
+  border-color: var(--primary-300); 
+}
+
+.cardMedia { 
+  aspect-ratio: 16/10; 
+  background: #f2f6fb; 
+  overflow: hidden; 
+  position: relative; 
+}
+
+.cardMedia img { 
+  width: 100%; 
+  height: 100%; 
+  object-fit: cover; 
+  display: block; 
+  transition: transform 0.3s ease; 
+}
+
+.card:hover .cardMedia img { 
+  transform: scale(1.05); 
+}
+
+.cardOverlay {
+  position: absolute; 
+  inset: 0; 
+  background: rgba(0,0,0,0.4);
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  opacity: 0; 
+  transition: opacity 0.3s ease;
+}
+
+.card:hover .cardOverlay { 
+  opacity: 1; 
+}
+
+.viewRecipeBtn {
+  background: rgba(255,255,255,0.9); 
+  color: #0b3a5b; 
+  padding: 8px 16px; 
+  border-radius: 25px;
+  font-weight: 600; 
+  display: flex; 
+  align-items: center; 
+  gap: 6px; 
+  backdrop-filter: blur(10px);
+}
+
+.cardBody { 
+  padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-xl); 
+  display: grid; 
+  gap: var(--spacing-lg); 
+}
+
+.cardTitle { 
+  font-size: 1.25rem; 
+  font-weight: 700; 
+  color: var(--text-primary); 
+  margin: 0; 
+  line-height: 1.4; 
+  background: linear-gradient(135deg, var(--primary-600), var(--secondary-700));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.cardDesc { 
+  color: var(--text-secondary); 
+  font-size: 1rem; 
+  line-height: 1.6; 
+  max-height: 3.6em; 
+  overflow: hidden; 
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.cardTags { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 8px; 
+}
+
+.mealTagsSection {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+  align-items: center;
+}
+
+.diseaseTagsSection {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.sectionLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-right: 4px;
+  white-space: nowrap;
+}
+
+/* ---- Meal tags (เหมือนหน้าเพิ่มสูตรอาหาร) ---- */
+.mealTag {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1px solid;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ---- Disease tags (เหมือนหน้าเพิ่มสูตรอาหาร) ---- */
+.diseaseTag {
+  display: inline-flex; 
+  align-items: center; 
+  gap: 6px; 
+  padding: 6px 12px; 
+  border-radius: 20px;
+  font-size: 0.8rem; 
+  font-weight: 600; 
+  border: 1px solid; 
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15); 
+  transition: all 0.3s ease;
+}
+
+.diseaseTag:hover { 
+  transform: translateY(-1px); 
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2); 
+}
+
+/* ===========================
+   Additional Utility Classes
+   =========================== */
+.submitButton {
+  background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+  color: white;
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  font-weight: 600;
+  transition: all var(--transition-normal);
+  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.submitButton:hover {
+  /* ไม่เปลี่ยนสีพื้นหลังเมื่อ hover */
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);
+}
+
+.badge {
+  background: linear-gradient(135deg, var(--primary-100), var(--primary-200));
+  color: var(--primary-700);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-lg);
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid var(--primary-300);
+}
+
+/* ===========================
    Responsive
    =========================== */
 @media (max-width: 768px) {
-  .headerContent { padding: 0 1rem; flex-direction: column; gap: 1rem; }
-  .header h1 { font-size: 1.5rem; }
-  .recipeStats { grid-template-columns: 1fr; gap: 1rem; }
-  .tabs { padding: 0 1rem; overflow-x: auto; }
-  .tab { padding: 0.75rem 1rem; white-space: nowrap; }
-  .main { padding: 1rem; }
-  .sectionHeader { flex-direction: column; align-items: stretch; }
-  .headerActions { flex-direction: column; align-items: stretch; gap: 0.75rem; }
-  .addRecipeBtn { justify-content: center; width: 100%; }
-  .searchBox input { width: 100%; }
-  .statsGrid { grid-template-columns: 1fr; }
-  .recipesGrid { grid-template-columns: 1fr; }
-  .tableContainer { overflow-x: auto; }
-  .table { min-width: 600px; }
+  .headerContent { 
+    padding: 0 var(--spacing-lg); 
+    flex-direction: column; 
+    gap: var(--spacing-lg); 
+  }
+  .header h1 { 
+    font-size: 1.75rem; 
+    text-align: center;
+  }
+  .recipeStats { 
+    grid-template-columns: 1fr; 
+    gap: var(--spacing-lg); 
+  }
+  .tabs { 
+    padding: 0 var(--spacing-lg); 
+    overflow-x: auto; 
+  }
+  .tab { 
+    padding: var(--spacing-lg) var(--spacing-lg); 
+    white-space: nowrap; 
+  }
+  .main { 
+    padding: var(--spacing-lg); 
+  }
+  .sectionHeader { 
+    flex-direction: column; 
+    align-items: stretch; 
+    gap: var(--spacing-lg);
+  }
+  .headerActions { 
+    flex-direction: column; 
+    align-items: stretch; 
+    gap: var(--spacing-lg); 
+  }
+  .addRecipeBtn { 
+    justify-content: center; 
+    width: 100%; 
+  }
+  .searchBox input { 
+    width: 100%; 
+  }
+  .statsGrid { 
+    grid-template-columns: 1fr; 
+    gap: var(--spacing-lg);
+  }
+  .recipeGrid { 
+    grid-template-columns: 1fr; 
+    gap: var(--spacing-lg);
+  }
+  .tableContainer { 
+    overflow-x: auto; 
+  }
+  .table { 
+    min-width: 600px; 
+  }
+  .overview h2 {
+    font-size: 2rem;
+  }
+  .sectionHeader h2 {
+    font-size: 1.5rem;
+  }
 }
 
 @media (max-width: 480px) {
-  .adminInfo { flex-direction: column; gap: 0.5rem; }
-  .statCard { padding: 1.5rem; }
-  .statIcon { font-size: 2rem; }
-  .statContent h3 { font-size: 2rem; }
-  .recipeActions { flex-direction: column; }
+  .adminInfo { 
+    flex-direction: column; 
+    gap: var(--spacing-sm); 
+    align-items: center;
+  }
+  .statCard { 
+    padding: var(--spacing-xl); 
+  }
+  .statIcon { 
+    font-size: 2.5rem; 
+  }
+  .statContent h3 { 
+    font-size: 2.25rem; 
+  }
+  .recipeActions { 
+    flex-direction: column; 
+    gap: var(--spacing-sm);
+  }
+  .header h1 {
+    font-size: 1.5rem;
+  }
+  .overview h2 {
+    font-size: 1.75rem;
+  }
+  .sectionHeader h2 {
+    font-size: 1.25rem;
+  }
+  .statsSection h3 {
+    font-size: 1.25rem;
+  }
 }
