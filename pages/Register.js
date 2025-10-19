@@ -1,8 +1,8 @@
 'use client'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { FaEnvelope, FaLock, FaUser, FaEye, FaEyeSlash, FaUserPlus } from 'react-icons/fa'
+import { FaEnvelope, FaLock, FaUser, FaEye, FaEyeSlash, FaUserPlus, FaImage, FaTimes } from 'react-icons/fa'
 import styles from '../styles/Login/Register.module.css'
 
 const fields = [
@@ -17,8 +17,33 @@ export default function Register() {
   const [popupMessage, setPopupMessage] = useState('')
   const [showPopup, setShowPopup] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [image, setImage] = useState(null)
+  const [preview, setPreview] = useState(null)
+  const fileInputRef = useRef(null)
 
   const handleChange = e => setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      setImage(file)
+      
+      // สร้าง preview
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        setPreview(e.target.result)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const removeImage = () => {
+    setImage(null)
+    setPreview(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
 
   const handleSubmit = async e => {
     e.preventDefault()
@@ -36,10 +61,18 @@ export default function Register() {
 
     setLoading(true)
     try {
+      // ใช้ FormData สำหรับการอัปโหลดรูปภาพ
+      const formData = new FormData()
+      formData.append('name', name)
+      formData.append('email', email)
+      formData.append('password', password)
+      if (image) {
+        formData.append('image', image)
+      }
+
       const res = await fetch('/api/register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
+        body: formData,
       })
       const data = await res.json().catch(() => ({}))
 
@@ -124,6 +157,37 @@ export default function Register() {
               </button>
             </div>
           ))}
+
+          {/* รูปโปรไฟล์ */}
+          <div className={styles.imageUploadWrapper}>
+            <label htmlFor="profileImage" className={styles.imageUploadLabel}>
+              <FaImage className={styles.inputIcon} />
+              <span>รูปโปรไฟล์ (ไม่บังคับ)</span>
+            </label>
+            <input
+              type="file"
+              id="profileImage"
+              name="profileImage"
+              accept="image/*"
+              onChange={handleImageChange}
+              className={styles.fileInput}
+              ref={fileInputRef}
+              disabled={loading}
+            />
+            {preview && (
+              <div className={styles.imagePreview}>
+                <img src={preview} alt="Preview" />
+                <button
+                  type="button"
+                  onClick={removeImage}
+                  className={styles.removeImageBtn}
+                  disabled={loading}
+                >
+                  <FaTimes />
+                </button>
+              </div>
+            )}
+          </div>
 
           <button type="submit" className={styles.button} disabled={loading}>
             <FaUserPlus className={styles.buttonIcon} />

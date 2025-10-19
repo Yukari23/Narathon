@@ -312,6 +312,32 @@
   transform: none;
 }
 
+/* Success Message */
+.successMessage {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  padding: 16px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  text-align: center;
+  margin: 20px auto 0;
+  max-width: 400px;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+  animation: slideIn 0.3s ease-out;
+  grid-column: 1 / -1;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* ปรับสำหรับหน้าจอเล็ก */
 @media (max-width: 768px) {
   .pageWrapper {

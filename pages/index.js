@@ -94,6 +94,17 @@ export default function Home({ initialRecipes = [], diseaseCategories: diseaseCa
   const [showDiseasePopup, setShowDiseasePopup] = useState(false);
   const [showMealPopup, setShowMealPopup] = useState(false);
 
+  // ===== Auto Recommendation System =====
+  const [recommendedRecipes, setRecommendedRecipes] = useState([]);
+  const [recommendationLoading, setRecommendationLoading] = useState(false);
+  const [recommendationMessage, setRecommendationMessage] = useState('สูตรอาหารแนะนำ');
+  const [timeUntilRefresh, setTimeUntilRefresh] = useState(120); // 2 minutes in seconds
+
+
+  // ===== Pagination =====
+  const [currentPage, setCurrentPage] = useState(1);
+  const recipesPerPage = 15; // 3 แนว x 5 บัตร = 15 สูตร
+
   const [recipes] = useState(
     (initialRecipes || [])
       .filter(r => Number.isFinite(Number(r.id)))
@@ -121,6 +132,32 @@ const getMealName = (key) => {
   return m?.name ?? '';
 };
 
+// ฟังก์ชันสำหรับรวมแท็กโรคและลบการซ้ำกัน
+const getUniqueDiseaseTags = (recipe, diseaseCategories) => {
+  const uniqueTags = new Set();
+  
+  // เพิ่มแท็กจาก diseases (Disease_code)
+  if (recipe.diseases && Array.isArray(recipe.diseases)) {
+    recipe.diseases.forEach(diseaseId => {
+      const disease = diseaseCategories.find(x => x.id === diseaseId);
+      if (disease && disease.name) {
+        uniqueTags.add(disease.name);
+      }
+    });
+  }
+  
+  // เพิ่มแท็กจาก tags (Disease_tags)
+  if (recipe.tags && Array.isArray(recipe.tags)) {
+    recipe.tags.forEach(tag => {
+      if (tag && tag.trim()) {
+        uniqueTags.add(tag.trim());
+      }
+    });
+  }
+  
+  return Array.from(uniqueTags);
+};
+
   const filteredRecipes = useMemo(() => {
   const q = norm(searchQuery);
 
@@ -131,7 +168,10 @@ const getMealName = (key) => {
 
     // ----- กรองตามมื้อที่เลือก (รองรับหลายมื้อ) -----
     const byMeal = selectedMeals.length === 0 || 
-      selectedMeals.some(meal => (r.mealTypes || []).includes(meal.id));
+      selectedMeals.some(meal => {
+        // เปรียบเทียบกับชื่อภาษาไทย (มื้อเช้า, มื้อกลางวัน, มื้อเย็น)
+        return (r.mealTypes || []).includes(meal.name);
+      });
 
     // ----- ค้นจากช่องค้นหา: ชื่อเมนู / รายละเอียด / ชื่อโรค / ชื่อมื้อ -----
     if (!q) return byDisease && byMeal;
@@ -159,6 +199,172 @@ const getMealName = (key) => {
   });
 }, [recipes, selectedDiseases, selectedMeals, searchQuery, diseaseCategories, mealTypes]);
 
+  // ✅ Pagination logic
+  const totalPages = Math.ceil(filteredRecipes.length / recipesPerPage);
+  const startIndex = (currentPage - 1) * recipesPerPage;
+  const endIndex = startIndex + recipesPerPage;
+  const currentRecipes = filteredRecipes.slice(startIndex, endIndex);
+
+  // ✅ Reset to page 1 when search or filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedDiseases, selectedMeals]);
+
+  // ===== Auto Recommendation Functions =====
+  const fetchRecommendedRecipes = async () => {
+    setRecommendationLoading(true);
+    try {
+      // ใช้ระบบแนะนำใหม่ที่อิงจากโรคที่ผู้ใช้สนใจ
+      const userEmail = localStorage.getItem('memberEmail') || localStorage.getItem('userEmail');
+      
+      if (userEmail) {
+        // ถ้ามีผู้ใช้ล็อกอิน ให้แนะนำตามโรคที่สนใจ
+        const response = await fetch(`/api/recommendations?email=${encodeURIComponent(userEmail)}&limit=5`);
+        const data = await response.json();
+        
+        if (response.ok && data.recommendations) {
+          setRecommendedRecipes(data.recommendations);
+          // อัปเดตข้อความแนะนำ
+          if (data.recommendationType === 'personalized') {
+            setRecommendationMessage(data.message);
+          } else {
+            setRecommendationMessage('แนะนำสูตรอาหารแบบสุ่ม (ยังไม่ได้เลือกโรคที่สนใจ)');
+          }
+        } else {
+          // ถ้า API ไม่สำเร็จ ให้ใช้วิธีเดิม
+          await fetchRandomRecommendations();
+        }
+      } else {
+        // ถ้าไม่มีผู้ใช้ล็อกอิน ให้แนะนำแบบสุ่ม
+        await fetchRandomRecommendations();
+      }
+    } catch (error) {
+      console.error('Error fetching recommended recipes:', error);
+      // ถ้าเกิดข้อผิดพลาด ให้ใช้วิธีเดิม
+      await fetchRandomRecommendations();
+    } finally {
+      setRecommendationLoading(false);
+    }
+  };
+
+  // ฟังก์ชันสำหรับแนะนำแบบสุ่ม (fallback)
+  const fetchRandomRecommendations = async () => {
+    try {
+      const response = await fetch('/api/recipes');
+      const data = await response.json();
+      
+      if (response.ok && data.recipes) {
+        // สุ่มเลือก 5 สูตรจากทั้งหมด
+        const shuffled = [...data.recipes].sort(() => 0.5 - Math.random());
+        const selected = shuffled.slice(0, 5);
+        
+        // แปลงข้อมูลให้ตรงกับรูปแบบที่ใช้ในหน้า
+        const formattedRecipes = selected.map(recipe => {
+          // แปลง Disease_tags จาก string เป็น array
+          const diseaseTags = recipe?.Disease_tags ? 
+            String(recipe.Disease_tags).split(',').map(tag => tag.trim()).filter(Boolean) : [];
+          
+          // แปลง Meal จาก string เป็น array
+          let mealTypesArray = [];
+          if (recipe?.Meal) {
+            const mealString = String(recipe.Meal);
+            if (mealString.startsWith('[') && mealString.endsWith(']')) {
+              try {
+                const parsedMeals = JSON.parse(mealString);
+                if (Array.isArray(parsedMeals)) {
+                  mealTypesArray = parsedMeals.map(meal => {
+                    if (['breakfast', 'lunch', 'dinner', 'snack', 'dessert'].includes(String(meal).toLowerCase())) {
+                      const translateMeal = (meal) => {
+                        switch ((meal || '').toLowerCase()) {
+                          case 'breakfast': return 'มื้อเช้า';
+                          case 'lunch': return 'มื้อกลางวัน';
+                          case 'dinner': return 'มื้อเย็น';
+                          case 'snack': return 'ของว่าง';
+                          case 'dessert': return 'ของหวาน';
+                          default: return meal || 'ไม่ระบุ';
+                        }
+                      };
+                      return translateMeal(meal);
+                    }
+                    return meal;
+                  }).filter(Boolean);
+                }
+              } catch (e) {
+                mealTypesArray = [];
+              }
+            } else {
+              const meals = mealString.split(',').map(m => m.trim()).filter(Boolean);
+              mealTypesArray = meals.map(meal => {
+                if (['breakfast', 'lunch', 'dinner', 'snack', 'dessert'].includes(meal.toLowerCase())) {
+                  const translateMeal = (meal) => {
+                    switch ((meal || '').toLowerCase()) {
+                      case 'breakfast': return 'มื้อเช้า';
+                      case 'lunch': return 'มื้อกลางวัน';
+                      case 'dinner': return 'มื้อเย็น';
+                      case 'snack': return 'ของว่าง';
+                      case 'dessert': return 'ของหวาน';
+                      default: return meal || 'ไม่ระบุ';
+                    }
+                  };
+                  return translateMeal(meal);
+                }
+                return meal;
+              }).filter(Boolean);
+            }
+          }
+
+          return {
+            id: Number(recipe.Recipe_code),
+            title: recipe.Recipe_name || 'ไม่ทราบชื่อ',
+            image: normalizeImagePath(recipe.Image),
+            details: recipe.details || '',
+            mealTypes: mealTypesArray,
+            diseases: recipe.Disease_code ? [Number(recipe.Disease_code)] : [],
+            tags: diseaseTags,
+          };
+        }).filter(x => Number.isFinite(x.id));
+
+        setRecommendedRecipes(formattedRecipes);
+        setRecommendationMessage('สูตรอาหารแนะนำ');
+      }
+    } catch (error) {
+      console.error('Error fetching random recommendations:', error);
+    }
+  };
+
+  // Auto-refresh recommendations every 2 minutes
+  useEffect(() => {
+    // Load initial recommendations
+    fetchRecommendedRecipes();
+    
+    // Set up interval for auto-refresh every 2 minutes (120000ms)
+    const interval = setInterval(fetchRecommendedRecipes, 120000);
+    
+    // Cleanup interval on component unmount
+    return () => clearInterval(interval);
+  }, [loggedEmail]); // อัปเดตเมื่อผู้ใช้เปลี่ยน
+
+  // Countdown timer for refresh
+  useEffect(() => {
+    const countdownInterval = setInterval(() => {
+      setTimeUntilRefresh(prev => {
+        if (prev <= 1) {
+          return 120; // Reset to 2 minutes
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(countdownInterval);
+  }, []);
+
+  // Format time display
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
 
   const clearFilters = (e) => {
     e?.preventDefault();
@@ -168,6 +374,8 @@ const getMealName = (key) => {
     setShowDiseasePopup(false);
     setShowMealPopup(false);
   };
+
+
 
   // ===== UI =====
   const menuRef = useRef(null);
@@ -319,13 +527,139 @@ const getMealName = (key) => {
 )}
       </section>
 
+      {/* Auto Recommendation Section */}
+      <section className={styles.recommendationSection}>
+        <div className={styles.recommendationHeader}>
+          <h2 className={styles.recommendationTitle}>
+            <span className={styles.recommendationIcon}>✨</span>
+            {recommendationMessage}
+          </h2>
+          <div className={styles.recommendationSubtitle}>
+            {isLoggedIn ? 
+              'สูตรอาหารที่คัดสรรตามโรคที่คุณสนใจ (อัปเดตอัตโนมัติทุก 2 นาที)' :
+              'สูตรอาหารแนะนำสำหรับผู้ใช้ทั่วไป (อัปเดตอัตโนมัติทุก 2 นาที)'
+            }
+          </div>
+          <div className={styles.refreshCountdown}>
+            <span className={styles.countdownIcon}>⏰</span>
+            <span className={styles.countdownText}>
+              อัปเดตครั้งถัดไปใน: <span className={styles.countdownTime}>{formatTime(timeUntilRefresh)}</span>
+            </span>
+          </div>
+        </div>
+
+        {recommendationLoading ? (
+          <div className={styles.recommendationLoading}>
+            <div className={styles.loadingSpinner}></div>
+            <p>กำลังโหลดสูตรอาหารแนะนำ...</p>
+          </div>
+        ) : (
+          <div className={styles.recommendationGrid}>
+            {recommendedRecipes.map((recipe) => (
+              <Link key={recipe.id} href={`/recipes/${recipe.id}`} className={styles.recommendationCard}>
+                <div className={styles.recommendationCardMedia}>
+                  <img src={normalizeImagePath(recipe.image)} alt={recipe.title} />
+                  <div className={styles.recommendationCardOverlay}>
+                    <div className={styles.recommendationViewBtn}>
+                      <FaUtensils /> ดูสูตร
+                    </div>
+                  </div>
+                </div>
+                <div className={styles.recommendationCardBody}>
+                  <h3 className={styles.recommendationCardTitle}>{recipe.title}</h3>
+                  {recipe.details && <p className={styles.recommendationCardDesc}>{recipe.details}</p>}
+                  <div className={styles.recommendationCardTags}>
+                    {/* Meal Tags */}
+                    {(recipe.mealTypes||[]).length > 0 && (
+                      <div className={styles.recommendationMealTagsSection}>
+                        <span className={styles.recommendationSectionLabel}>มื้อ:</span>
+                        {(recipe.mealTypes||[]).map((mt, index)=> {
+                          const colors = ['#FEF08A', '#BBF7D0', '#DDD6FE'];
+                          const color = colors[index % colors.length];
+                          
+                          const displayText = (() => {
+                            if (['breakfast', 'lunch', 'dinner', 'snack', 'dessert'].includes(String(mt).toLowerCase())) {
+                              const translateMeal = (meal) => {
+                                switch ((meal || '').toLowerCase()) {
+                                  case 'breakfast': return 'มื้อเช้า';
+                                  case 'lunch': return 'มื้อกลางวัน';
+                                  case 'dinner': return 'มื้อเย็น';
+                                  case 'snack': return 'ของว่าง';
+                                  case 'dessert': return 'ของหวาน';
+                                  default: return meal || 'ไม่ระบุ';
+                                }
+                              };
+                              return translateMeal(mt);
+                            }
+                            return mt;
+                          })();
+                          
+                          return (
+                            <span
+                              key={`meal-${index}`}
+                              className={styles.recommendationMealTag}
+                              style={{ 
+                                background: color,
+                                color: '#000000',
+                                borderColor: color,
+                                padding: '0.15rem 0.5rem',
+                                borderRadius: '8px',
+                                fontSize: '0.7rem'
+                              }}
+                              title={displayText}
+                            >
+                              {displayText}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+                    
+                    {/* Disease Tags */}
+                    {(() => {
+                      const uniqueDiseaseTags = getUniqueDiseaseTags(recipe, diseaseCategories);
+                      return uniqueDiseaseTags.length > 0 && (
+                        <div className={styles.recommendationDiseaseTagsSection}>
+                          <span className={styles.recommendationSectionLabel}>โรค:</span>
+                          {uniqueDiseaseTags.map((tag, index) => {
+                            const diseasePalette = ['#FFB6C1', '#ADD8E6', '#FFD700', '#98FB98', '#DDA0DD', '#F0E68C', '#CDE7FF', '#FECACA', '#DCFCE7', '#E9D5FF'];
+                            const getDiseaseColor = (idx) => diseasePalette[idx % diseasePalette.length];
+                            return (
+                              <span
+                                key={`recommendation-disease-tag-${index}`}
+                                className={styles.recommendationDiseaseTag}
+                                style={{ 
+                                  backgroundColor: getDiseaseColor(index),
+                                  color: '#000000',
+                                  borderColor: getDiseaseColor(index),
+                                  padding: '4px 8px',
+                                  borderRadius: '16px',
+                                  fontSize: '0.7rem'
+                                }}
+                                title={tag}
+                              >
+                                {tag}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+
       {/* Recipes */}
       <section className={styles.section}>
         <div className={styles.sectionHead}>
           <h2 className={styles.sectionTitle}>
             {selectedDiseases.length > 0 ? 
               `สูตรสำหรับ${selectedDiseases.map(d => d.name).join(', ')}` : 
-              'สูตรอาหารแนะนำ'
+              'สูตรอาหารทั้งหมด'
             }
           </h2>
           <div className={styles.recipeCount}>
@@ -348,8 +682,13 @@ const getMealName = (key) => {
             </button>
           </div>
         ) : (
-          <div className={styles.recipeGrid}>
-            {filteredRecipes.map((r)=> (
+          <div className={`${styles.recipeGrid} ${
+            currentRecipes.length === 1 ? styles.singleRecipe :
+            currentRecipes.length === 2 ? styles.twoRecipes :
+            currentRecipes.length === 3 ? styles.threeRecipes :
+            currentRecipes.length === 4 ? styles.fourRecipes : ''
+          }`}>
+            {currentRecipes.map((r)=> (
               <Link key={r.id} href={`/recipes/${r.id}`} className={styles.card}>
                 <div className={styles.cardMedia}>
                   <img src={normalizeImagePath(r.image)} alt={r.title} />
@@ -412,63 +751,79 @@ const getMealName = (key) => {
                     )}
                     
                     {/* Disease Tags - แสดงด้านล่าง */}
-                    {((r.diseases||[]).length > 0 || (r.tags||[]).length > 0) && (
-                      <div className={styles.diseaseTagsSection}>
-                        <span className={styles.sectionLabel}>โรค:</span>
-                        {/* Disease Tags from Disease_code */}
-                        {(r.diseases||[]).map((diseaseId)=>{
-                          const disease = diseaseCategories.find(x=>x.id===diseaseId);
-                          const diseasePalette = ['#FFB6C1', '#ADD8E6', '#FFD700', '#98FB98', '#DDA0DD', '#F0E68C', '#CDE7FF', '#FECACA', '#DCFCE7', '#E9D5FF'];
-                          const getDiseaseColor = (id) => diseasePalette[(Number(id) || 0) % diseasePalette.length];
-                          return disease ? (
-                            <span
-                              key={`disease-${diseaseId}`}
-                              className={styles.diseaseTag}
-                              style={{ 
-                                backgroundColor: getDiseaseColor(diseaseId),
-                                color: '#000000',
-                                borderColor: getDiseaseColor(diseaseId),
-                                padding: '4px 8px',
-                                borderRadius: '16px',
-                                fontSize: '0.7rem'
-                              }}
-                              title={disease.name}
-                            >
-                              {disease.name}
-                            </span>
-                          ) : null;
-                        })}
-                        
-                        {/* Disease Tags from Disease_tags */}
-                        {(r.tags||[]).map((tag, index)=>{
-                          const diseasePalette = ['#FFB6C1', '#ADD8E6', '#FFD700', '#98FB98', '#DDA0DD', '#F0E68C', '#CDE7FF', '#FECACA', '#DCFCE7', '#E9D5FF'];
-                          const getDiseaseColor = (idx) => diseasePalette[idx % diseasePalette.length];
-                          return (
-                            <span
-                              key={`tag-${index}`}
-                              className={styles.diseaseTag}
-                              style={{ 
-                                backgroundColor: getDiseaseColor(index),
-                                color: '#000000',
-                                borderColor: getDiseaseColor(index),
-                                padding: '4px 8px',
-                                borderRadius: '16px',
-                                fontSize: '0.7rem'
-                              }}
-                              title={tag}
-                            >
-                              {tag}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    )}
+                    {(() => {
+                      const uniqueDiseaseTags = getUniqueDiseaseTags(r, diseaseCategories);
+                      return uniqueDiseaseTags.length > 0 && (
+                        <div className={styles.diseaseTagsSection}>
+                          <span className={styles.sectionLabel}>โรค:</span>
+                          {uniqueDiseaseTags.map((tag, index) => {
+                            const diseasePalette = ['#FFB6C1', '#ADD8E6', '#FFD700', '#98FB98', '#DDA0DD', '#F0E68C', '#CDE7FF', '#FECACA', '#DCFCE7', '#E9D5FF'];
+                            const getDiseaseColor = (idx) => diseasePalette[idx % diseasePalette.length];
+                            return (
+                              <span
+                                key={`disease-tag-${index}`}
+                                className={styles.diseaseTag}
+                                style={{ 
+                                  backgroundColor: getDiseaseColor(index),
+                                  color: '#000000',
+                                  borderColor: getDiseaseColor(index),
+                                  padding: '4px 8px',
+                                  borderRadius: '16px',
+                                  fontSize: '0.7rem'
+                                }}
+                                title={tag}
+                              >
+                                {tag}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               </Link>
             ))}
           </div>
         )}
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+            <div className={styles.pagination}>
+              <div className={styles.paginationInfo}>
+                แสดง {startIndex + 1}-{Math.min(endIndex, filteredRecipes.length)} จาก {filteredRecipes.length} สูตร
+              </div>
+              <div className={styles.paginationControls}>
+                <button
+                  className={styles.paginationBtn}
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  ← ก่อนหน้า
+                </button>
+                
+                <div className={styles.pageNumbers}>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <button
+                      key={page}
+                      className={`${styles.pageBtn} ${currentPage === page ? styles.activePage : ''}`}
+                      onClick={() => setCurrentPage(page)}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+                
+                <button
+                  className={styles.paginationBtn}
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  ถัดไป →
+                </button>
+              </div>
+            </div>
+          )}
       </section>
 
       <footer className={styles.footer}>

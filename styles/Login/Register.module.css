@@ -119,6 +119,92 @@
 }
 
 /* =============================== */
+/* อัปโหลดรูปภาพ */
+.imageUploadWrapper {
+  margin-bottom: 1.5rem;
+}
+
+.imageUploadLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+}
+
+.fileInput {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px dashed var(--border-light);
+  border-radius: var(--radius-lg);
+  background: var(--background-secondary);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.fileInput:hover {
+  border-color: var(--primary-400);
+  background: var(--primary-50);
+}
+
+.fileInput:focus {
+  outline: none;
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.imagePreview {
+  position: relative;
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
+}
+
+.imagePreview img {
+  max-width: 120px;
+  max-height: 120px;
+  border-radius: 50%;
+  border: 3px solid var(--primary-200);
+  object-fit: cover;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.removeImageBtn {
+  position: absolute;
+  top: -5px;
+  right: calc(50% - 65px);
+  background: var(--error-500);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+}
+
+.removeImageBtn:hover {
+  background: var(--error-600);
+  transform: scale(1.1);
+}
+
+.removeImageBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* =============================== */
 /* ปุ่มสมัครสมาชิก */
 .button {
   background: linear-gradient(135deg, #3b82f6, #2563eb); /* ไล่สีฟ้าเข้ม-น้ำเงิน */

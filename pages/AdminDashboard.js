@@ -48,10 +48,18 @@ export default function AdminDashboard() {
   const [editingRecipe, setEditingRecipe] = useState(null)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showDiseaseForm, setShowDiseaseForm] = useState(false)
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const recipesPerPage = 15 // 3 แนว x 5 บัตร = 15 สูตร
   const [editingDisease, setEditingDisease] = useState(null)
   const [diseaseFormData, setDiseaseFormData] = useState({ name: '', color: '#94a3b8' })
   const [editingUser, setEditingUser] = useState(null)
   const [showUserEditModal, setShowUserEditModal] = useState(false)
+  
+  // Multi-select state for recipes
+  const [selectedRecipes, setSelectedRecipes] = useState([])
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false)
 
   useEffect(() => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
@@ -194,6 +202,64 @@ export default function AdminDashboard() {
       }
     } catch (e) {
       console.error('Error deleting recipe:', e)
+      alert('เกิดข้อผิดพลาดในการลบสูตรอาหาร')
+    }
+  }
+
+  // Multi-select functions
+  const toggleMultiSelectMode = () => {
+    setIsMultiSelectMode(!isMultiSelectMode)
+    if (isMultiSelectMode) {
+      setSelectedRecipes([])
+    }
+  }
+
+  const toggleRecipeSelection = (recipeId) => {
+    setSelectedRecipes(prev => {
+      if (prev.includes(recipeId)) {
+        return prev.filter(id => id !== recipeId)
+      } else {
+        return [...prev, recipeId]
+      }
+    })
+  }
+
+  const selectAllRecipes = () => {
+    setSelectedRecipes(currentRecipes.map(recipe => recipe.Recipe_code))
+  }
+
+  const deselectAllRecipes = () => {
+    setSelectedRecipes([])
+  }
+
+  const handleDeleteSelectedRecipes = async () => {
+    if (selectedRecipes.length === 0) {
+      alert('กรุณาเลือกสูตรอาหารที่ต้องการลบ')
+      return
+    }
+
+    if (!confirm(`คุณแน่ใจหรือไม่ที่จะลบสูตรอาหาร ${selectedRecipes.length} สูตร?`)) return
+
+    try {
+      const deletePromises = selectedRecipes.map(recipeId => 
+        fetch(`/api/recipes?id=${recipeId}`, { method: 'DELETE' })
+      )
+      
+      const responses = await Promise.all(deletePromises)
+      const failedDeletes = responses.filter(res => !res.ok)
+      
+      if (failedDeletes.length === 0) {
+        const updatedRecipes = recipes.filter(r => !selectedRecipes.includes(r.Recipe_code))
+        setRecipes(updatedRecipes)
+        setStats(prev => ({ ...prev, totalRecipes: Math.max(0, prev.totalRecipes - selectedRecipes.length) }))
+        setSelectedRecipes([])
+        setIsMultiSelectMode(false)
+        alert(`ลบสูตรอาหาร ${selectedRecipes.length} สูตรสำเร็จ`)
+      } else {
+        alert('เกิดข้อผิดพลาดในการลบสูตรอาหารบางส่วน')
+      }
+    } catch (e) {
+      console.error('Error deleting recipes:', e)
       alert('เกิดข้อผิดพลาดในการลบสูตรอาหาร')
     }
   }
@@ -369,6 +435,17 @@ export default function AdminDashboard() {
     return byTitle || byDesc || byDiseaseTag || byMealName;
   });
 
+  // ✅ Pagination logic
+  const totalPages = Math.ceil(filteredRecipes.length / recipesPerPage)
+  const startIndex = (currentPage - 1) * recipesPerPage
+  const endIndex = startIndex + recipesPerPage
+  const currentRecipes = filteredRecipes.slice(startIndex, endIndex)
+
+  // ✅ Reset to page 1 when search changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm])
+
   const filteredDiseases = diseases.filter(disease => 
     disease.name?.toLowerCase().includes(searchTerm.toLowerCase())
   )
@@ -389,19 +466,20 @@ export default function AdminDashboard() {
         <div className={styles.headerContent}>
           <h1>Dashboard</h1>
           <div className={styles.adminInfo}>
-            <Link 
+            <Link
               href="/"
-              className={styles.logoutBtn}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                background: 'var(--primary-600)',
-                borderColor: 'var(--primary-700)'
-              }}
+              className={styles.homeBtn}
               title="กลับหน้าหลัก"
             >
               <FaHome /> กลับหน้าหลัก
+            </Link>
+
+            <Link
+              href="/admin-register"
+              className={styles.actionBtn}
+              title="เพิ่มแอดมินใหม่"
+            >
+              <FaUser /> เพิ่มแอดมิน
             </Link>
 
             <span style={{ marginLeft: '0.75rem' }}>
@@ -766,20 +844,76 @@ export default function AdminDashboard() {
             <div className={styles.sectionHeader}>
               <h2>จัดการสูตรอาหาร</h2>
 
-              {/* ✅ ปุ่มเพิ่มสูตรอาหาร (คืนกลับมา) */}
-              <Link
-                href="/add-recipe"
-                className={styles.addRecipeBtn}
-                style={{ marginLeft: 'auto' }}
-                title="เพิ่มสูตรอาหาร"
-              >
-                <FaPlus /> เพิ่มสูตรอาหาร
-              </Link>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginLeft: 'auto' }}>
+                {/* Multi-select controls */}
+                {isMultiSelectMode ? (
+                  <>
+                    <button
+                      onClick={selectAllRecipes}
+                      className={styles.multiSelectBtn}
+                      style={{ background: '#10b981', color: 'white' }}
+                    >
+                      เลือกทั้งหมด
+                    </button>
+                    <button
+                      onClick={deselectAllRecipes}
+                      className={styles.multiSelectBtn}
+                      style={{ background: '#6b7280', color: 'white' }}
+                    >
+                      ยกเลิกทั้งหมด
+                    </button>
+                    <button
+                      onClick={handleDeleteSelectedRecipes}
+                      className={styles.multiSelectBtn}
+                      style={{ background: '#ef4444', color: 'white' }}
+                      disabled={selectedRecipes.length === 0}
+                    >
+                      <FaTrash /> ลบที่เลือก ({selectedRecipes.length})
+                    </button>
+                    <button
+                      onClick={toggleMultiSelectMode}
+                      className={styles.multiSelectBtn}
+                      style={{ background: '#6b7280', color: 'white' }}
+                    >
+                      <FaTimes /> ยกเลิก
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={toggleMultiSelectMode}
+                    className={styles.multiSelectBtn}
+                    style={{ background: '#3b82f6', color: 'white' }}
+                  >
+                    เลือกหลายบัตร
+                  </button>
+                )}
+
+                {/* ✅ ปุ่มเพิ่มสูตรอาหาร (คืนกลับมา) */}
+                <Link
+                  href="/add-recipe"
+                  className={styles.addRecipeBtn}
+                  title="เพิ่มสูตรอาหาร"
+                >
+                  <FaPlus /> เพิ่มสูตรอาหาร
+                </Link>
+              </div>
             </div>
             
             <div className={styles.recipeGrid}>
-              {filteredRecipes.map((recipe, index) => (
-                <div key={index} className={styles.card}>
+              {currentRecipes.map((recipe, index) => (
+                <div key={index} className={`${styles.card} ${isMultiSelectMode ? styles.multiSelectCard : ''} ${selectedRecipes.includes(recipe.Recipe_code) ? styles.selectedCard : ''}`}>
+                  {/* Multi-select checkbox */}
+                  {isMultiSelectMode && (
+                    <div className={styles.multiSelectCheckbox}>
+                      <input
+                        type="checkbox"
+                        checked={selectedRecipes.includes(recipe.Recipe_code)}
+                        onChange={() => toggleRecipeSelection(recipe.Recipe_code)}
+                        className={styles.checkbox}
+                      />
+                    </div>
+                  )}
+                  
                   <div className={styles.cardMedia}>
                     <img 
                       src={recipe.Image || '/images/GF3.jpg'} 
@@ -903,6 +1037,44 @@ export default function AdminDashboard() {
                 </div>
               ))}
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className={styles.pagination}>
+                <div className={styles.paginationInfo}>
+                  แสดง {startIndex + 1}-{Math.min(endIndex, filteredRecipes.length)} จาก {filteredRecipes.length} สูตร
+                </div>
+                <div className={styles.paginationControls}>
+                  <button
+                    className={styles.paginationBtn}
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    ← ก่อนหน้า
+                  </button>
+                  
+                  <div className={styles.pageNumbers}>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                      <button
+                        key={page}
+                        className={`${styles.pageBtn} ${currentPage === page ? styles.activePage : ''}`}
+                        onClick={() => setCurrentPage(page)}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+                  
+                  <button
+                    className={styles.paginationBtn}
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    ถัดไป →
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </main>

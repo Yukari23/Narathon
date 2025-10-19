@@ -24,6 +24,8 @@ export default function AddRecipe() {
 
   const [diseases, setDiseases] = useState([]);
   const [newDiseaseName, setNewDiseaseName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
 
   const diseasePalette = [
     '#FFB6C1', '#ADD8E6', '#FFD700', '#98FB98', '#DDA0DD',
@@ -154,6 +156,8 @@ export default function AddRecipe() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitSuccess(false);
 
     const formData = new FormData();
     formData.append('Recipe_name', recipeData.title);
@@ -197,9 +201,24 @@ export default function AddRecipe() {
       }
 
       if (response.ok) {
-        alert('✅ เพิ่มสูตรอาหารเรียบร้อยแล้ว!');
-        // Redirect ไปหน้า AdminDashboard
-        window.location.href = '/AdminDashboard';
+        setSubmitSuccess(true);
+        // ล้างฟอร์มและอยู่หน้าเดิม
+        setRecipeData({
+          title: '',
+          description: '',
+          imagePreview: null,
+          imageFile: null,
+          ingredients: [''],
+          steps: [''],
+          selectedDiseases: [],
+          selectedMeals: [],
+          cookTime: '',
+          calories: '',
+          member_email: '',
+          admin: ''
+        });
+        // ซ่อน success message หลังจาก 3 วินาที
+        setTimeout(() => setSubmitSuccess(false), 3000);
       } else {
         const detail = data && (data.error || data.sqlMessage || data.code);
         alert(`${data?.message || 'เกิดข้อผิดพลาดในการเพิ่มสูตรอาหาร'}${detail ? `\nรายละเอียด: ${detail}` : ''}`);
@@ -207,6 +226,8 @@ export default function AddRecipe() {
     } catch (error) {
       console.error('Error submitting recipe:', error);
       alert('เกิดข้อผิดพลาดในการส่งข้อมูล');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -408,9 +429,23 @@ export default function AddRecipe() {
             </div>
           </div>
 
-          <button type="submit" className={styles.submitButton}>
-            <FaUtensils /> บันทึกสูตรอาหาร
+          <button 
+            type="submit" 
+            className={styles.submitButton}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <>⏳ กำลังบันทึก...</>
+            ) : (
+              <><FaUtensils /> บันทึกสูตรอาหาร</>
+            )}
           </button>
+          
+          {submitSuccess && (
+            <div className={styles.successMessage}>
+              ✅ เพิ่มสูตรอาหารเรียบร้อยแล้ว! ฟอร์มถูกล้างแล้ว
+            </div>
+          )}
         </form>
       </div>
     </div>
