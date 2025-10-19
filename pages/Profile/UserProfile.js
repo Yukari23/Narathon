@@ -185,7 +185,7 @@ export default function UserProfile({ user, diseases = [], reason }) {
       {canView && (
         <div className={styles.diseaseSection}>
           <div className={styles.sectionHeader}>
-            <h3><FaStethoscope /> โรคที่สนใจ</h3>
+            <h3> โรคที่สนใจ</h3>
             {!isEditing && (
               <button
                 onClick={() => setIsEditing(true)}
@@ -247,7 +247,7 @@ export default function UserProfile({ user, diseases = [], reason }) {
                 <div className={styles.selectedDiseases}>
                   {selectedDiseases.map((disease, index) => (
                     <span key={index} className={styles.diseaseTag}>
-                      <FaStethoscope /> {disease}
+                       {disease}
                     </span>
                   ))}
                 </div>

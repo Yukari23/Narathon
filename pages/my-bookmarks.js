@@ -198,7 +198,7 @@ export default function MyBookmarks() {
             </Link>
           </div>
         ) : (
-          <div className={styles.recipeGrid}>
+          <div className={`${styles.recipeGrid} ${filteredBookmarks.length === 1 ? styles.singleRecipe : ''}`}>
             {filteredBookmarks.map((bookmark) => (
               <div key={bookmark.id} className={styles.recipeCard}>
                 <Link href={`/recipes/${bookmark.recipeId}`} className={styles.cardLink}>

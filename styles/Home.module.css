@@ -336,7 +336,7 @@
 }
 
 .recommendationCardMedia {
-  aspect-ratio: 16/11;
+  aspect-ratio: 3/2;
   background: #f2f6fb;
   overflow: hidden;
   position: relative;
@@ -349,6 +349,14 @@
   object-fit: cover;
   display: block;
   transition: transform 0.3s ease;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  image-rendering: optimize-contrast;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  filter: contrast(1.1) saturate(1.1) brightness(1.02);
 }
 
 .recommendationCard:hover .recommendationCardMedia img {
@@ -527,8 +535,22 @@
   box-shadow: 0 4px 20px rgba(0,0,0,0.06); transition: all 0.3s ease; position: relative;
 }
 .card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,0.12); border-color: #0ea5e9; }
-.cardMedia { aspect-ratio: 16/10; background: #f2f6fb; overflow: hidden; position: relative; }
-.cardMedia img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.3s ease; }
+.cardMedia { aspect-ratio: 3/2; background: #f2f6fb; overflow: hidden; position: relative; min-height: 200px; }
+.cardMedia img { 
+  width: 100%; 
+  height: 100%; 
+  object-fit: cover; 
+  display: block; 
+  transition: transform 0.3s ease;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  image-rendering: optimize-contrast;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  filter: contrast(1.1) saturate(1.1) brightness(1.02);
+}
 .card:hover .cardMedia img { transform: scale(1.05); }
 
 .cardOverlay {

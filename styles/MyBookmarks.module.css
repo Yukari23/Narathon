@@ -228,6 +228,20 @@
   margin-top: 24px;
 }
 
+/* Single Recipe Layout */
+.recipeGrid.singleRecipe {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+}
+
+.recipeGrid.singleRecipe .recipeCard {
+  max-width: 400px;
+  width: 100%;
+  margin: 0 auto;
+}
+
 .recipeCard {
   background: white;
   border-radius: 20px;
@@ -465,6 +479,15 @@
   .recipeGrid {
     grid-template-columns: 1fr;
     gap: 16px;
+  }
+  
+  .recipeGrid.singleRecipe {
+    min-height: 50vh;
+  }
+  
+  .recipeGrid.singleRecipe .recipeCard {
+    max-width: 100%;
+    margin: 0 16px;
   }
   
   .content {

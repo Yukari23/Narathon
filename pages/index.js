@@ -535,10 +535,7 @@ const getUniqueDiseaseTags = (recipe, diseaseCategories) => {
             {recommendationMessage}
           </h2>
           <div className={styles.recommendationSubtitle}>
-            {isLoggedIn ? 
-              'สูตรอาหารที่คัดสรรตามโรคที่คุณสนใจ (อัปเดตอัตโนมัติทุก 2 นาที)' :
-              'สูตรอาหารแนะนำสำหรับผู้ใช้ทั่วไป (อัปเดตอัตโนมัติทุก 2 นาที)'
-            }
+            
           </div>
           <div className={styles.refreshCountdown}>
             <span className={styles.countdownIcon}>⏰</span>
