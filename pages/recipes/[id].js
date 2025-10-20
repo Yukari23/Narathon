@@ -234,7 +234,7 @@ export default function RecipeDetail({ recipe }) {
     if (!recipe?.id) return;
     const email = getMemberEmail();
     if (!email) {
-      alert('โปรดล็อกอินก่อนบันทึกสูตรอาหาร');
+      alert('โปรดล็อกอินก่อนบุ๊กมาร์กอาหาร');
       const next = encodeURIComponent(`/recipe/${recipe.id}`);
       return router.push(`/Login?next=${next}`);
     }
@@ -394,11 +394,11 @@ export default function RecipeDetail({ recipe }) {
             onClick={toggleBookmark}
             disabled={bookmarkLoading || !isLoggedIn}
             aria-pressed={isBookmarked}
-            title={isBookmarked ? 'ยกเลิกบันทึกสูตรนี้' : 'บันทึกสูตรนี้'}
+            title={isBookmarked ? 'ยกเลิกการบุ๊กมาร์กนี้' : 'บุ๊กมาร์กสูตรนี้'}
           >
             <FaBookmark className={styles.actionIcon} />
             <span className={styles.actionText}>
-              {bookmarkLoading ? 'กำลังอัปเดต…' : isBookmarked ? 'บันทึกแล้ว' : 'บันทึกสูตร'}
+              {bookmarkLoading ? 'กำลังอัปเดต…' : isBookmarked ? 'บุ๊กมาร์กแล้ว' : 'บุ๊กมาร์กสูตร'}
             </span>
           </button>
           <div className={styles.recipeStats}>
@@ -429,11 +429,11 @@ export default function RecipeDetail({ recipe }) {
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>ส่วนผสมและวิธีทำ</h2>
           <div className={styles.comparisonContainer}>
-            {/* ส่วนผสม */}
+            {/*วัตถุดิบ */}
             {(recipe.ingredients?.length || 0) > 0 && (
               <div className={styles.comparisonColumn}>
                 <div className={`${styles.columnTitle} ${styles.ingredientsColumn}`}>
-                  📋 ส่วนผสม
+                  📋วัตถุดิบ
                 </div>
                 <ul className={styles.ingredientList}>
                   {recipe.ingredients.map((row, idx) => (
@@ -611,7 +611,7 @@ export async function getServerSideProps(context) {
     let r = null;
     try {
       const [rows] = await pool.execute(
-        'SELECT `Recipe_code`,`Image`,`details`,`Recipe_name`,`Meal`,`method`,`raw_material`,`Disease_tags`,`Member_email`,`Disease_code` FROM `recipes` WHERE `Recipe_code` = ? LIMIT 1',
+        'SELECT `Recipe_code`,`Image`,`details`,`Recipe_name`,`Meal`,`method`,`raw_material`,`Disease_tags`,`Disease_code` FROM `recipes` WHERE `Recipe_code` = ? LIMIT 1',
         [id]
       );
       r = rows?.[0] || null;
@@ -629,7 +629,7 @@ export async function getServerSideProps(context) {
           queueLimit: 0,
         });
         const [rows2] = await fallbackPool.execute(
-          'SELECT `Recipe_code`,`Image`,`details`,`Recipe_name`,`Meal`,`method`,`raw_material`,`Disease_tags`,`Member_email`,`Disease_code` FROM `recipes` WHERE `Recipe_code` = ? LIMIT 1',
+          'SELECT `Recipe_code`,`Image`,`details`,`Recipe_name`,`Meal`,`method`,`raw_material`,`Disease_tags`,`Disease_code` FROM `recipes` WHERE `Recipe_code` = ? LIMIT 1',
           [id]
         );
         r = rows2?.[0] || null;
@@ -683,8 +683,8 @@ export async function getServerSideProps(context) {
       ingredients,
       steps,
       tags: splitByComma(r.Disease_tags),
-      author: r.Member_email || null,
-      authorName: (r.Member_email || '').split('@')[0] || null,
+      author: null,
+      authorName: null,
     };
 
     return { props: { recipe } };

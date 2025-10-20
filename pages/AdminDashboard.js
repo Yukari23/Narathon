@@ -341,7 +341,6 @@ export default function AdminDashboard() {
   const handleDiseaseEdit = (disease) => {
     setDiseaseFormData({ name: disease.name, color: disease.color || '#94a3b8' })
     setEditingDisease(disease)
-    setShowDiseaseForm(true)
   }
 
   const handleDiseaseDelete = async (id) => {
@@ -445,6 +444,24 @@ export default function AdminDashboard() {
   useEffect(() => {
     setCurrentPage(1)
   }, [searchTerm])
+
+  // ปิดป๊อปอัพด้วยปุ่ม ESC และป้องกัน scroll
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && showDiseaseForm) {
+        cancelDiseaseEdit()
+      }
+    }
+    
+    if (showDiseaseForm) {
+      document.addEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = 'hidden'
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown)
+        document.body.style.overflow = 'unset'
+      }
+    }
+  }, [showDiseaseForm])
 
   const filteredDiseases = diseases.filter(disease => 
     disease.name?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -646,78 +663,90 @@ export default function AdminDashboard() {
             <div style={{ display: 'grid', gap: '1rem' }}>
               {filteredUsers.map((user) => (
                 <div key={user.email} className={styles.statCard}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                      <div style={{
-                        width: '50px',
-                        height: '50px',
-                        borderRadius: '50%',
-                        background: 'var(--primary-100)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: 'var(--primary-600)',
-                        fontSize: '1.5rem',
-                        overflow: 'hidden'
-                      }}>
-                        {user.image && user.image !== '/images/GF3.jpg' ? (
-                          <img 
-                            src={user.image} 
-                            alt={user.name}
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                          />
-                        ) : (
-                          <FaUser />
-                        )}
-                      </div>
-                      <div>
-                        <h4 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.2rem' }}>
-                          {user.name || 'ไม่ระบุชื่อ'}
-                        </h4>
-                        <p style={{ margin: '0.25rem 0 0 0', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
+                    <div style={{
+                      width: '50px',
+                      height: '50px',
+                      borderRadius: '50%',
+                      background: 'var(--primary-100)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'var(--primary-600)',
+                      fontSize: '1.5rem',
+                      overflow: 'hidden',
+                      flexShrink: 0
+                    }}>
+                      {user.image && user.image !== '/images/GF3.jpg' ? (
+                        <img 
+                          src={user.image} 
+                          alt={user.name}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        <FaUser />
+                      )}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <h4 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.2rem' }}>
+                        {user.name || 'ไม่ระบุชื่อ'}
+                      </h4>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.25rem' }}>
+                        <p style={{ margin: 0, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           <FaEnvelope size={12} />
                           {user.email}
                         </p>
-                        {user.diseaseTags && user.diseaseTags.length > 0 && (
-                          <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
-                            {user.diseaseTags.map((tag, index) => (
-                              <span 
-                                key={index}
-                                style={{
-                                  background: 'var(--primary-100)',
-                                  color: 'var(--primary-700)',
-                                  padding: '0.25rem 0.5rem',
-                                  borderRadius: 'var(--radius-sm)',
-                                  fontSize: '0.8rem'
-                                }}
-                              >
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                        {user.comment && (
-                          <p style={{ margin: '0.5rem 0 0 0', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                            หมายเหตุ: {user.comment}
-                          </p>
-                        )}
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button 
+                            onClick={() => handleUserEdit(user)}
+                            className={styles.submitButton}
+                            style={{ 
+                              margin: 0, 
+                              padding: '0.5rem 1rem', 
+                              fontSize: '0.9rem',
+                              transition: 'box-shadow 0.3s ease',
+                              transform: 'none'
+                            }}
+                          >
+                            <FaEdit /> แก้ไข
+                          </button>
+                          <button 
+                            onClick={() => handleUserDelete(user.email)}
+                            className={styles.logoutBtn}
+                            style={{ 
+                              padding: '0.5rem 1rem', 
+                              fontSize: '0.9rem',
+                              transition: 'box-shadow 0.3s ease',
+                              transform: 'none'
+                            }}
+                          >
+                            <FaTrash /> ลบ
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button 
-                        onClick={() => handleUserEdit(user)}
-                        className={styles.submitButton}
-                        style={{ margin: 0, padding: '0.5rem 1rem', fontSize: '0.9rem' }}
-                      >
-                        <FaEdit /> แก้ไข
-                      </button>
-                      <button 
-                        onClick={() => handleUserDelete(user.email)}
-                        className={styles.logoutBtn}
-                        style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}
-                      >
-                        <FaTrash /> ลบ
-                      </button>
+                      {user.diseaseTags && user.diseaseTags.length > 0 && (
+                        <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
+                          {user.diseaseTags.map((tag, index) => (
+                            <span 
+                              key={index}
+                              style={{
+                                background: 'var(--primary-100)',
+                                color: 'var(--primary-700)',
+                                padding: '0.25rem 0.5rem',
+                                borderRadius: 'var(--radius-sm)',
+                                fontSize: '0.8rem'
+                              }}
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {user.comment && (
+                        <p style={{ margin: '0.5rem 0 0 0', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                          หมายเหตุ: {user.comment}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -741,7 +770,11 @@ export default function AdminDashboard() {
               <h2>จัดการโรค</h2>
               <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                 <button 
-                  onClick={() => setShowDiseaseForm(true)}
+                  onClick={() => {
+                    setDiseaseFormData({ name: '', color: '#94a3b8' })
+                    setEditingDisease(null)
+                    setShowDiseaseForm(true)
+                  }}
                   className={styles.addDiseaseBtn}
                   style={{ margin: 0 }}
                 >
@@ -759,41 +792,6 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {showDiseaseForm && (
-              <div className={styles.statCard} style={{ marginBottom: '2rem' }}>
-                <h3 style={{ marginBottom: '1rem', color: 'var(--text-primary)' }}>
-                  {editingDisease ? 'แก้ไขโรค' : 'เพิ่มโรคใหม่'}
-                </h3>
-                <form onSubmit={handleDiseaseSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>
-                      ชื่อโรค
-                    </label>
-                    <input
-                      type="text"
-                      value={diseaseFormData.name}
-                      onChange={(e) => setDiseaseFormData({ ...diseaseFormData, name: e.target.value })}
-                      required
-                      style={{
-                        width: '100%',
-                        padding: '0.75rem',
-                        border: '2px solid var(--border-light)',
-                        borderRadius: 'var(--radius-lg)',
-                        fontSize: '1rem'
-                      }}
-                    />
-                  </div>
-                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end' }}>
-                    <button type="submit" className={styles.submitButton} style={{ margin: 0, flex: 1 }}>
-                      <FaSave /> {editingDisease ? 'อัปเดต' : 'เพิ่ม'}
-                    </button>
-                    <button type="button" onClick={cancelDiseaseEdit} className={styles.logoutBtn} style={{ flex: 1 }}>
-                      <FaTimes /> ยกเลิก
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
 
             <div style={{ display: 'grid', gap: '1rem' }}>
               {filteredDiseases.map((disease) => (
@@ -807,9 +805,12 @@ export default function AdminDashboard() {
                         ID: {disease.id}
                       </p>
                     </div>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', gap: '1rem' }}>
                       <button 
-                        onClick={() => handleDiseaseEdit(disease)}
+                        onClick={() => {
+                          handleDiseaseEdit(disease)
+                          setShowDiseaseForm(true)
+                        }}
                         className={styles.submitButton}
                         style={{ margin: 0, padding: '0.5rem 1rem', fontSize: '0.9rem' }}
                       >
@@ -1219,6 +1220,69 @@ export default function AdminDashboard() {
                   style={{ flex: 1 }}
                 >
                   ยกเลิก
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Disease Modal */}
+      {showDiseaseForm && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}
+          onClick={cancelDiseaseEdit}
+        >
+          <div 
+            className={styles.statCard} 
+            style={{ width: '90%', maxWidth: '500px', maxHeight: '80vh', overflow: 'auto' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ marginBottom: '1rem' }} onClick={(e) => e.stopPropagation()}>
+              <h3 style={{ margin: 0, color: 'var(--text-primary)', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                {editingDisease ? 'แก้ไขโรค' : 'เพิ่มโรคใหม่'}
+              </h3>
+            </div>
+            <form onSubmit={handleDiseaseSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }} onClick={(e) => e.stopPropagation()}>
+              <div onClick={(e) => e.stopPropagation()}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }} onClick={(e) => e.stopPropagation()}>
+                  ชื่อโรค
+                </label>
+                <input
+                  type="text"
+                  value={diseaseFormData.name}
+                  onChange={(e) => setDiseaseFormData({ ...diseaseFormData, name: e.target.value })}
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '2px solid var(--border-light)',
+                    borderRadius: 'var(--radius-lg)',
+                    fontSize: '1rem'
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }} onClick={(e) => e.stopPropagation()}>
+                <button type="submit" className={styles.submitButton} style={{ margin: 0, flex: 1 }} onClick={(e) => e.stopPropagation()}>
+                  <FaSave /> {editingDisease ? 'อัปเดต' : 'เพิ่ม'}
+                </button>
+                <button type="button" onClick={(e) => {
+                  e.stopPropagation()
+                  cancelDiseaseEdit()
+                }} className={styles.logoutBtn} style={{ flex: 1 }}>
+                  <FaTimes /> ปิด
                 </button>
               </div>
             </form>

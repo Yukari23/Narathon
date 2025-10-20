@@ -178,11 +178,8 @@ export default function AddRecipe() {
     const diseaseTagsString = selectedDiseases.map(d => d.name).join(',');
     formData.append('Disease_tags', diseaseTagsString);
     
-    formData.append('Member_email', recipeData.member_email || '');
-    
     // ส่ง Disease_code ตัวแรก (สำหรับความเข้ากันได้กับระบบเดิม)
     formData.append('Disease_code', selectedDiseaseIds[0] || '');
-    formData.append('Admin', recipeData.admin || '');
 
     if (recipeData.imageFile) formData.append('Image', recipeData.imageFile);
 
@@ -322,11 +319,11 @@ export default function AddRecipe() {
             </div>
           </div>
 
-          {/* ส่วนขวา - ส่วนผสม วิธีทำ และแท็ก */}
+          {/* ส่วนขวา - วัตถุดิบ วิธีทำ และแท็ก */}
           <div className={styles.formRight}>
-            {/* 🥣 ส่วนผสม */}
+            {/* 🥣 วัตถุดิบ */}
             <div className={styles.formGroup}>
-              <label>ส่วนผสม</label>
+              <label>วัตถุดิบ</label>
               {recipeData.ingredients.map((ingredient, index) => (
                 <div key={index} className={styles.listItem}>
                   <input

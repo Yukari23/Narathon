@@ -638,7 +638,7 @@
    =========================== */
 .actions {
   display: flex;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-lg);
 }
 
 .actions button,
@@ -740,6 +740,12 @@
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+}
+
+/* เพิ่มระยะห่างสำหรับปุ่มในหน้าจัดการผู้ใช้และโรค */
+.users .statCard > div:last-child,
+.diseases .statCard > div:last-child {
+  gap: var(--spacing-lg);
 }
 
 .recipeActions button {
@@ -1545,4 +1551,23 @@
     width: 1rem;
     height: 1rem;
   }
+}
+
+/* ปิดการเคลื่อนไหวของปุ่มแก้ไขและลบในหน้าจัดการผู้ใช้ */
+.statCard .submitButton,
+.statCard .logoutBtn,
+.statCard button {
+  transition: box-shadow 0.3s ease !important;
+}
+
+.statCard .submitButton:hover,
+.statCard .logoutBtn:hover,
+.statCard button:hover,
+.statCard .submitButton:active,
+.statCard .logoutBtn:active,
+.statCard button:active,
+.statCard .submitButton:focus,
+.statCard .logoutBtn:focus,
+.statCard button:focus {
+  transform: none !important;
 }

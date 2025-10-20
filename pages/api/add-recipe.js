@@ -84,9 +84,7 @@ export default async function handler(req, res) {
     const details          = getField('details') || '';
     const Meal             = getField('Meal') || '';
     const diseaseTagsRaw   = getField('Disease_tags') || '';
-    const Member_email     = getField('Member_email') || null;
     const Disease_code_raw = getField('Disease_code');
-    const Admin            = getField('Admin') || null;
 
     // ✅ รายการส่วนผสม/วิธีทำ (เก็บเป็นข้อ ๆ)
     let ingredientList = getMultiFieldList(fields, ['raw_material', 'ingredient']);
@@ -138,8 +136,6 @@ export default async function handler(req, res) {
     const ImageSafe       = truncate(imageBasename ? `/uploads/${imageBasename}` : null, 255);
     const RecipeNameSafe  = truncate(Recipe_name, 255);
     const DiseaseTagsSafe = truncate(diseaseTagsRaw, 255);
-    const MemberEmailSafe = truncate(Member_email, 191);
-    const AdminSafe       = truncate(Admin, 50);
 
     // ข้อความยาว (MEDIUMTEXT) — details เก็บเป็นสตริงปกติ
     const normalizeMultiline = (s) =>
@@ -153,9 +149,9 @@ export default async function handler(req, res) {
     // ===== INSERT =====
     const sql = `
       INSERT INTO recipes
-        (Image, details, Recipe_name, Meal, method, raw_material, Disease_tags, Member_email, Disease_code, Admin)
+        (Image, details, Recipe_name, Meal, method, raw_material, Disease_tags, Disease_code)
       VALUES
-        (?,     ?,       ?,          ?,    ?,      ?,            ?,            ?,            ?,            ?)
+        (?,     ?,       ?,          ?,    ?,      ?,            ?,            ?)
     `;
     const params = [
       ImageSafe,
@@ -165,9 +161,7 @@ export default async function handler(req, res) {
       MethodSafe,
       RawMaterialSafe,
       DiseaseTagsSafe,
-      MemberEmailSafe,
       Disease_code,
-      AdminSafe,
     ];
 
     try {

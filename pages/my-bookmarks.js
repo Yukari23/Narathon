@@ -129,10 +129,10 @@ export default function MyBookmarks() {
           </Link>
           <div className={styles.titleSection}>
             <h1 className={styles.title}>
-              <FaBookmark /> สูตรอาหารที่บันทึกไว้
+              <FaBookmark /> สูตรอาหารที่บุ๊กมาร์กไว้
             </h1>
             <p className={styles.subtitle}>
-              {bookmarks.length} สูตรที่คุณบันทึกไว้
+              {bookmarks.length} สูตรที่คุณบุ๊กมาร์กไว้
             </p>
           </div>
         </div>

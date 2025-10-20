@@ -146,11 +146,46 @@ const getUniqueDiseaseTags = (recipe, diseaseCategories) => {
     });
   }
   
-  // เพิ่มแท็กจาก tags (Disease_tags)
+  // เพิ่มแท็กจาก tags (Disease_tags) และลบการซ้ำกัน
   if (recipe.tags && Array.isArray(recipe.tags)) {
     recipe.tags.forEach(tag => {
       if (tag && tag.trim()) {
-        uniqueTags.add(tag.trim());
+        const trimmedTag = tag.trim();
+        // ตรวจสอบว่าไม่ซ้ำกับชื่อโรคที่มีอยู่แล้ว
+        const isDuplicate = Array.from(uniqueTags).some(existingTag => {
+          const existingLower = existingTag.toLowerCase();
+          const trimmedLower = trimmedTag.toLowerCase();
+          
+          // ตรวจสอบการซ้ำกันแบบต่างๆ
+          return existingLower === trimmedLower ||
+                 existingLower.includes(trimmedLower) ||
+                 trimmedLower.includes(existingLower) ||
+                 // ตรวจสอบการซ้ำกันแบบ "โรคเบาหวาน" vs "เบาหวาน"
+                 (existingLower.includes('โรค') && trimmedLower === existingLower.replace('โรค', '')) ||
+                 (trimmedLower.includes('โรค') && existingLower === trimmedLower.replace('โรค', '')) ||
+                 // ตรวจสอบการซ้ำกันแบบ "เบาหวาน" vs "โรคเบาหวาน"
+                 (existingLower === 'เบาหวาน' && trimmedLower === 'โรคเบาหวาน') ||
+                 (trimmedLower === 'เบาหวาน' && existingLower === 'โรคเบาหวาน') ||
+                 // ตรวจสอบการซ้ำกันแบบ "โรคหัวใจ" vs "หัวใจ"
+                 (existingLower === 'หัวใจ' && trimmedLower === 'โรคหัวใจ') ||
+                 (trimmedLower === 'หัวใจ' && existingLower === 'โรคหัวใจ') ||
+                 // ตรวจสอบการซ้ำกันแบบ "โรคไต" vs "ไต"
+                 (existingLower === 'ไต' && trimmedLower === 'โรคไต') ||
+                 (trimmedLower === 'ไต' && existingLower === 'โรคไต') ||
+                 // ตรวจสอบการซ้ำกันแบบ "โรคความดัน" vs "ความดัน"
+                 (existingLower === 'ความดัน' && trimmedLower === 'โรคความดัน') ||
+                 (trimmedLower === 'ความดัน' && existingLower === 'โรคความดัน') ||
+                 // ตรวจสอบการซ้ำกันแบบ "โรคไขมัน" vs "ไขมัน"
+                 (existingLower === 'ไขมัน' && trimmedLower === 'โรคไขมัน') ||
+                 (trimmedLower === 'ไขมัน' && existingLower === 'โรคไขมัน') ||
+                 // ตรวจสอบการซ้ำกันแบบ "โรคท้องผูก" vs "ท้องผูก"
+                 (existingLower === 'ท้องผูก' && trimmedLower === 'โรคท้องผูก') ||
+                 (trimmedLower === 'ท้องผูก' && existingLower === 'โรคท้องผูก');
+        });
+        
+        if (!isDuplicate) {
+          uniqueTags.add(trimmedTag);
+        }
       }
     });
   }
@@ -216,14 +251,90 @@ const getUniqueDiseaseTags = (recipe, diseaseCategories) => {
     try {
       // ใช้ระบบแนะนำใหม่ที่อิงจากโรคที่ผู้ใช้สนใจ
       const userEmail = localStorage.getItem('memberEmail') || localStorage.getItem('userEmail');
-      
       if (userEmail) {
         // ถ้ามีผู้ใช้ล็อกอิน ให้แนะนำตามโรคที่สนใจ
         const response = await fetch(`/api/recommendations?email=${encodeURIComponent(userEmail)}&limit=5`);
         const data = await response.json();
         
         if (response.ok && data.recommendations) {
-          setRecommendedRecipes(data.recommendations);
+          // แปลงข้อมูลที่ได้จาก API ให้ถูกต้อง
+          const formattedRecipes = data.recommendations.map(recipe => {
+            
+            // แปลง Disease_tags จาก string เป็น array
+            const diseaseTags = recipe?.tags ? 
+              (Array.isArray(recipe.tags) ? recipe.tags : String(recipe.tags).split(',').map(tag => tag.trim()).filter(Boolean)) : 
+              (recipe?.Disease_tags ? String(recipe.Disease_tags).split(',').map(tag => tag.trim()).filter(Boolean) : []);
+            
+            // แปลง Meal จาก string เป็น array
+            let mealTypesArray = [];
+            if (recipe?.mealTypes && Array.isArray(recipe.mealTypes)) {
+              mealTypesArray = recipe.mealTypes;
+            } else if (recipe?.Meal) {
+              const mealString = String(recipe.Meal);
+              if (mealString.startsWith('[') && mealString.endsWith(']')) {
+                try {
+                  const parsedMeals = JSON.parse(mealString);
+                  if (Array.isArray(parsedMeals)) {
+                    mealTypesArray = parsedMeals.map(meal => {
+                      if (['breakfast', 'lunch', 'dinner', 'snack', 'dessert'].includes(String(meal).toLowerCase())) {
+                        const translateMeal = (meal) => {
+                          switch ((meal || '').toLowerCase()) {
+                            case 'breakfast': return 'มื้อเช้า';
+                            case 'lunch': return 'มื้อกลางวัน';
+                            case 'dinner': return 'มื้อเย็น';
+                            case 'snack': return 'ของว่าง';
+                            case 'dessert': return 'ของหวาน';
+                            default: return meal || 'ไม่ระบุ';
+                          }
+                        };
+                        return translateMeal(meal);
+                      }
+                      return meal;
+                    }).filter(Boolean);
+                  }
+                } catch (e) {
+                  mealTypesArray = [];
+                }
+              } else {
+                const meals = mealString.split(',').map(m => m.trim()).filter(Boolean);
+                mealTypesArray = meals.map(meal => {
+                  if (['breakfast', 'lunch', 'dinner', 'snack', 'dessert'].includes(meal.toLowerCase())) {
+                    const translateMeal = (meal) => {
+                      switch ((meal || '').toLowerCase()) {
+                        case 'breakfast': return 'มื้อเช้า';
+                        case 'lunch': return 'มื้อกลางวัน';
+                        case 'dinner': return 'มื้อเย็น';
+                        case 'snack': return 'ของว่าง';
+                        case 'dessert': return 'ของหวาน';
+                        default: return meal || 'ไม่ระบุ';
+                      }
+                    };
+                    return translateMeal(meal);
+                  }
+                  return meal;
+                }).filter(Boolean);
+              }
+            }
+
+            // สร้างข้อมูลโรคที่ถูกต้อง
+            const diseases = recipe.diseases && Array.isArray(recipe.diseases) ? recipe.diseases : 
+                           (recipe.Disease_code ? [Number(recipe.Disease_code)] : []);
+            const tags = diseaseTags;
+
+            const formattedRecipe = {
+              id: Number(recipe.id || recipe.Recipe_code),
+              title: recipe.title || recipe.Recipe_name || 'ไม่ทราบชื่อ',
+              image: normalizeImagePath(recipe.image || recipe.Image),
+              details: recipe.details || '',
+              mealTypes: mealTypesArray,
+              diseases: diseases,
+              tags: tags,
+            };
+            
+            return formattedRecipe;
+          }).filter(x => Number.isFinite(x.id));
+
+          setRecommendedRecipes(formattedRecipes);
           // อัปเดตข้อความแนะนำ
           if (data.recommendationType === 'personalized') {
             setRecommendationMessage(data.message);
@@ -313,14 +424,18 @@ const getUniqueDiseaseTags = (recipe, diseaseCategories) => {
             }
           }
 
+          // สร้างข้อมูลโรคที่ถูกต้อง
+          const diseases = recipe.Disease_code ? [Number(recipe.Disease_code)] : [];
+          const tags = diseaseTags;
+
           return {
             id: Number(recipe.Recipe_code),
             title: recipe.Recipe_name || 'ไม่ทราบชื่อ',
             image: normalizeImagePath(recipe.Image),
             details: recipe.details || '',
             mealTypes: mealTypesArray,
-            diseases: recipe.Disease_code ? [Number(recipe.Disease_code)] : [],
-            tags: diseaseTags,
+            diseases: diseases,
+            tags: tags,
           };
         }).filter(x => Number.isFinite(x.id));
 
