@@ -21,7 +21,6 @@ export default async function handler(req, res) {
           Email_member AS email,
           Image AS image,
           Disease_tags AS diseaseTags,
-          comment,
           OTP AS otp
         FROM members
         ORDER BY Email_member DESC
@@ -42,7 +41,7 @@ export default async function handler(req, res) {
 
   if (method === 'PUT') {
     try {
-      const { email, name, diseaseTags, comment, isActive } = req.body;
+      const { email, name, diseaseTags, isActive } = req.body;
       
       if (!email) {
         return res.status(400).json({ message: 'กรุณาระบุอีเมล' });
@@ -60,11 +59,6 @@ export default async function handler(req, res) {
         const tagsString = Array.isArray(diseaseTags) ? diseaseTags.join(',') : diseaseTags;
         updates.push('Disease_tags = ?');
         values.push(tagsString);
-      }
-
-      if (comment !== undefined) {
-        updates.push('comment = ?');
-        values.push(comment);
       }
 
       if (isActive !== undefined) {

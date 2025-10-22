@@ -223,8 +223,8 @@
 /* Recipe Grid */
 .recipeGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 28px;
   margin-top: 24px;
 }
 
@@ -237,45 +237,49 @@
 }
 
 .recipeGrid.singleRecipe .recipeCard {
-  max-width: 400px;
+  max-width: 420px;
   width: 100%;
   margin: 0 auto;
 }
 
 .recipeCard {
   background: white;
-  border-radius: 20px;
+  border-radius: 24px;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-  transition: all 0.3s ease;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  border: 1px solid rgba(226, 232, 240, 0.8);
 }
 
 .recipeCard:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+  transform: translateY(-8px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+  border-color: rgba(14, 165, 233, 0.3);
 }
 
 .cardLink {
   text-decoration: none;
   color: inherit;
+  display: block;
 }
 
 .cardImage {
   position: relative;
-  height: 200px;
+  height: 240px;
   overflow: hidden;
+  background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
 }
 
 .cardImage img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .recipeCard:hover .cardImage img {
-  transform: scale(1.05);
+  transform: scale(1.1);
 }
 
 .cardOverlay {
@@ -284,12 +288,12 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.1));
+  background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.7) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.4s ease;
 }
 
 .recipeCard:hover .cardOverlay {
@@ -297,33 +301,54 @@
 }
 
 .viewBtn {
-  background: rgba(255,255,255,0.9);
+  background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.85));
+  backdrop-filter: blur(10px);
   color: #0b3a5b;
-  padding: 12px 20px;
-  border-radius: 25px;
-  font-weight: 600;
+  padding: 14px 28px;
+  border-radius: 50px;
+  font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  font-size: 1.05rem;
 }
 
 .viewBtn:hover {
-  background: white;
-  transform: scale(1.05);
+  background: linear-gradient(135deg, #ffffff, #f8fafc);
+  transform: scale(1.08);
+  box-shadow: 0 6px 30px rgba(0,0,0,0.3);
 }
 
 .cardContent {
-  padding: 20px;
+  padding: 24px;
   position: relative;
 }
 
 .cardTitle {
-  font-size: 1.3rem;
+  font-size: 1.4rem;
   font-weight: 700;
   color: #0b3a5b;
   margin: 0 0 12px 0;
-  line-height: 1.3;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardDescription {
+  font-size: 0.95rem;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0 0 16px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .cardMeta {
@@ -361,6 +386,13 @@
   font-weight: 500;
 }
 
+.diseaseTagsSection {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
 .diseaseTag {
   display: inline-flex;
   align-items: center;
@@ -379,6 +411,13 @@
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
+.mealTagsSection {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
 .mealTag {
   padding: 0.15rem 0.5rem;
   border-radius: 8px;
@@ -388,6 +427,13 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
+}
+
+.sectionLabel {
+  font-weight: 600;
+  color: #64748b;
+  font-size: 0.75rem;
+  margin-right: 4px;
 }
 
 .moreTags {
@@ -400,10 +446,11 @@
   position: absolute;
   top: 16px;
   right: 16px;
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border: none;
-  background: #fef2f2;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
   color: #dc2626;
   border-radius: 50%;
   cursor: pointer;
@@ -411,13 +458,18 @@
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  font-size: 0.9rem;
+  font-size: 1rem;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  z-index: 10;
+  border: 2px solid rgba(220, 38, 38, 0.1);
 }
 
 .removeBtn:hover {
-  background: #fecaca;
-  color: #b91c1c;
-  transform: scale(1.1);
+  background: #dc2626;
+  color: white;
+  transform: scale(1.15) rotate(90deg);
+  box-shadow: 0 4px 20px rgba(220, 38, 38, 0.4);
+  border-color: #dc2626;
 }
 
 /* Login Prompt */
@@ -457,6 +509,13 @@
 }
 
 /* Responsive */
+@media (max-width: 1024px) {
+  .recipeGrid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+  }
+}
+
 @media (max-width: 768px) {
   .header {
     padding: 16px;
@@ -477,8 +536,8 @@
   }
   
   .recipeGrid {
-    grid-template-columns: 1fr;
-    gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
   }
   
   .recipeGrid.singleRecipe {
@@ -493,11 +552,41 @@
   .content {
     padding: 0 16px 16px;
   }
+
+  .cardImage {
+    height: 200px;
+  }
+
+  .cardContent {
+    padding: 20px;
+  }
+
+  .cardTitle {
+    font-size: 1.2rem;
+  }
+
+  .cardDescription {
+    font-size: 0.9rem;
+  }
 }
 
 @media (max-width: 480px) {
   .title {
-    font-size: 1.5rem;
+    font-size: 1.6rem;
+    gap: 8px;
+  }
+
+  .subtitle {
+    font-size: 1rem;
+  }
+  
+  .recipeGrid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .cardImage {
+    height: 180px;
   }
   
   .cardContent {
@@ -506,5 +595,28 @@
   
   .cardTitle {
     font-size: 1.1rem;
+  }
+
+  .cardDescription {
+    font-size: 0.85rem;
+    -webkit-line-clamp: 1;
+  }
+
+  .mealTag,
+  .diseaseTag {
+    font-size: 0.75rem;
+    padding: 5px 10px;
+  }
+
+  .removeBtn {
+    width: 36px;
+    height: 36px;
+    top: 12px;
+    right: 12px;
+  }
+
+  .viewBtn {
+    padding: 12px 20px;
+    font-size: 0.95rem;
   }
 }

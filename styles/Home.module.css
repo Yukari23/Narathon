@@ -169,10 +169,49 @@
 .qfBtn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); border-color: #0ea5e9; background: linear-gradient(135deg, #f0f9ff, #e0f2fe); }
 
 /* Active filters */
-.activeFilters { margin-top: 18px; display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; }
+.activeFilters { 
+  margin-top: 18px; 
+  display: flex; 
+  gap: 20px; 
+  align-items: center; 
+  justify-content: center; 
+  flex-wrap: wrap; 
+}
 .tags { display: flex; gap: 10px; flex-wrap: wrap; }
-.tag { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 999px; border: 1px solid rgba(0,0,0,0.05); background: #fff; color: #0b3a5b; }
+.tag { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 999px; border: 1px solid rgba(0,0,0,0.05); background: #fff; color: #0b3a5b; font-weight: 600; }
 .tag button { border: none; background: transparent; cursor: pointer; display: grid; place-items: center; }
+
+/* Clear Filter Button in Active Filters (Hero section) */
+.clearFiltersMainBtn {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  margin-left: 16px;
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
+}
+
+.clearFiltersMainBtn:hover {
+  background: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+}
+
+.clearFiltersMainBtn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
 
 
 /* Categories */
@@ -668,7 +707,7 @@
 .mealCard { 
   display: flex; 
   align-items: center; 
-  justify-content: space-between;
+  justify-content: center;
   gap: 6px; 
   padding: 16px 10px; 
   border-radius: 14px; 
@@ -687,6 +726,37 @@
   transform: translateY(-2px); 
   box-shadow: 0 8px 25px rgba(0,0,0,0.15); 
   border-width: 2px;
+}
+
+/* Clear Filter Section in Meal Popup */
+.clearFilterSection {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: center;
+}
+
+.clearFilterButton {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.clearFilterButton:hover {
+  background: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
 }
 
 
@@ -816,6 +886,7 @@
   .qfBtn { width: 100%; max-width: 220px; justify-content: center; padding: 12px 20px; }
   .activeFilters { flex-direction: column; align-items: center; gap: 16px; }
   .tags { justify-content: center; }
+  .clearFiltersMainBtn { margin-left: 0; margin-top: 8px; }
   .section { padding: 20px 16px 40px; }
   
   /* Recommendation responsive */
@@ -850,6 +921,7 @@
   .mealTag { font-size: 0.8rem; padding: 4px 10px; }
   .popup { width: 95vw; margin: 0 2.5vw; }
   .mealGrid { grid-template-columns: 1fr; }
+  .clearFiltersMainBtn { width: 100%; max-width: 250px; justify-content: center; }
   
   /* บนมือถือ ให้แสดง 1 คอลัมน์เสมอ */
   .recipeGrid.singleRecipe,

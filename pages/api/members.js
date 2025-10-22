@@ -25,7 +25,6 @@ export default async function handler(req, res) {
           Email_member      AS email,
           Image             AS image,
           Disease_tags      AS diseaseTags,
-          comment           AS comment,
           OTP               AS otp
         FROM members
         WHERE Email_member = ?
@@ -55,7 +54,6 @@ export default async function handler(req, res) {
           email: member.email,
           image: member.image,
           diseaseTags: tags,
-          comment: member.comment || '',
           otp: member.otp || '',
         },
       });
@@ -66,7 +64,7 @@ export default async function handler(req, res) {
   }
 
   if (method === 'PUT') {
-    const { email, name, password, image, diseaseTags, comment, otp } = req.body || {};
+    const { email, name, password, image, diseaseTags, otp } = req.body || {};
     if (!email) return res.status(400).json({ message: 'Missing email' });
 
     try {
@@ -101,11 +99,6 @@ export default async function handler(req, res) {
         updateValues.push(tagsString);
       }
 
-      if (comment !== undefined) {
-        updateFields.push('comment = ?');
-        updateValues.push(String(comment || '').trim());
-      }
-
       if (otp !== undefined) {
         updateFields.push('OTP = ?');
         updateValues.push(String(otp || '').trim());
@@ -134,7 +127,6 @@ export default async function handler(req, res) {
           Email_member AS email,
           Image        AS image,
           Disease_tags AS diseaseTags,
-          comment      AS comment,
           OTP          AS otp
         FROM members
         WHERE Email_member = ?
@@ -157,7 +149,6 @@ export default async function handler(req, res) {
           email: updated.email || email,
           image: updated.image,
           diseaseTags: tags,
-          comment: updated.comment || '',
           otp: updated.otp || ''
         }
       });
@@ -168,7 +159,7 @@ export default async function handler(req, res) {
   }
 
   if (method === 'POST') {
-    const { email, name, password, image, diseaseTags, comment, otp } = req.body || {};
+    const { email, name, password, image, diseaseTags, otp } = req.body || {};
     
     if (!email || !name || !password) {
       return res.status(400).json({ 
@@ -198,15 +189,14 @@ export default async function handler(req, res) {
       // สร้างสมาชิกใหม่ (เก็บรหัสผ่านแบบ plain text)
       const [result] = await pool.execute(
         `INSERT INTO members 
-         (Email_member, First_name, Password, Image, Disease_tags, comment, OTP) 
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+         (Email_member, First_name, Password, Image, Disease_tags, OTP) 
+         VALUES (?, ?, ?, ?, ?, ?)`,
         [
           email,
           String(name).trim(),
           password, // เก็บรหัสผ่านแบบ plain text
           image ? String(image).trim() : null,
           Array.isArray(diseaseTags) ? diseaseTags.join(',') : (diseaseTags || ''),
-          comment ? String(comment).trim() : '',
           otp ? String(otp).trim() : ''
         ]
       );

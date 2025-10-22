@@ -481,6 +481,7 @@ export default function RecipeDetail({ recipe }) {
               const isOwner = (c.memberEmail || '').toLowerCase() === currentUserEmail;
               const isAdminUser = role === 'admin';
               const canDelete = isOwner || isAdminUser;
+              const canEdit = isOwner; // เฉพาะเจ้าของเท่านั้นที่แก้ไขได้
 
               const avatar = c.isAdmin ? adminInfo.image : normalizeImagePath(c.authorImage);
               const displayName = c.isAdmin ? (adminInfo.name || 'แอดมิน') : (c.authorName || 'ผู้ใช้ไม่ระบุ');
@@ -504,24 +505,28 @@ export default function RecipeDetail({ recipe }) {
                         </span>
                       </div>
                     </div>
-                    {canDelete && isLoggedIn && (
+                    {isLoggedIn && (canEdit || canDelete) && (
                       <div className={styles.commentActions}>
-                        <button
-                          className={styles.editCommentBtn}
-                          onClick={() => handleStartEdit(c)}
-                          title="แก้ไขคอมเม้นต์"
-                          aria-label="แก้ไขคอมเม้นต์"
-                        >
-                          <FaEdit />
-                        </button>
-                        <button
-                          className={styles.deleteCommentBtn}
-                          onClick={() => handleDeleteComment(c.id)}
-                          title="ลบคอมเม้นต์"
-                          aria-label="ลบคอมเม้นต์"
-                        >
-                          <FaTrash />
-                        </button>
+                        {canEdit && (
+                          <button
+                            className={styles.editCommentBtn}
+                            onClick={() => handleStartEdit(c)}
+                            title="แก้ไขคอมเม้นต์"
+                            aria-label="แก้ไขคอมเม้นต์"
+                          >
+                            <FaEdit />
+                          </button>
+                        )}
+                        {canDelete && (
+                          <button
+                            className={styles.deleteCommentBtn}
+                            onClick={() => handleDeleteComment(c.id)}
+                            title="ลบคอมเม้นต์"
+                            aria-label="ลบคอมเม้นต์"
+                          >
+                            <FaTrash />
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>

@@ -187,7 +187,7 @@ export default async function handler(req, res) {
     }
   }
 
-  // ---------- PUT: update comment (เจ้าของหรือแอดมิน) ----------
+  // ---------- PUT: update comment (เฉพาะเจ้าของเท่านั้น) ----------
   if (req.method === 'PUT') {
     try {
       const id = toInt(req.body?.id, NaN);
@@ -201,9 +201,10 @@ export default async function handler(req, res) {
         });
       }
 
-      const allowed = await canModifyComment(id, actorEmail);
+      // ตรวจสอบว่าเป็นเจ้าของคอมเมนต์เท่านั้น (ไม่รวมแอดมิน)
+      const allowed = await isOwnerOfComment(id, actorEmail);
       if (!allowed) {
-        return res.status(403).json({ message: 'ไม่มีสิทธิ์แก้ไขคอมเมนต์นี้' });
+        return res.status(403).json({ message: 'คุณสามารถแก้ไขได้เฉพาะคอมเมนต์ของตัวเองเท่านั้น' });
       }
 
       await pool.execute(

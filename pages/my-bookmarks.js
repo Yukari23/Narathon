@@ -201,6 +201,15 @@ export default function MyBookmarks() {
           <div className={`${styles.recipeGrid} ${filteredBookmarks.length === 1 ? styles.singleRecipe : ''}`}>
             {filteredBookmarks.map((bookmark) => (
               <div key={bookmark.id} className={styles.recipeCard}>
+                <button
+                  onClick={() => handleRemoveBookmark(bookmark.recipeId)}
+                  className={styles.removeBtn}
+                  title="ลบออกจากบุ๊กมาร์ก"
+                  aria-label="ลบออกจากบุ๊กมาร์ก"
+                >
+                  <FaTimes />
+                </button>
+
                 <Link href={`/recipes/${bookmark.recipeId}`} className={styles.cardLink}>
                   <div className={styles.cardImage}>
                     <img 
@@ -216,97 +225,97 @@ export default function MyBookmarks() {
                       </div>
                     </div>
                   </div>
-                </Link>
-                
-                <div className={styles.cardContent}>
-                  <h3 className={styles.cardTitle}>{bookmark.title}</h3>
                   
-                  <div className={styles.cardTags}>
-                    {/* Disease Tags */}
-                    {bookmark.diseaseTags.length > 0 && (
-                      <div className={styles.diseaseTagsSection}>
-                        <span className={styles.sectionLabel}>โรค:</span>
-                        {bookmark.diseaseTags.slice(0, 3).map((tag, index) => {
-                          const diseasePalette = ['#FFB6C1', '#ADD8E6', '#FFD700', '#98FB98', '#DDA0DD', '#F0E68C', '#CDE7FF', '#FECACA', '#DCFCE7', '#E9D5FF'];
-                          const getDiseaseColor = (id) => diseasePalette[(Number(id) || 0) % diseasePalette.length];
-                          return (
-                            <span
-                              key={index}
-                              className={styles.diseaseTag}
-                              style={{
-                                backgroundColor: getDiseaseColor(index),
-                                color: '#000000',
-                                borderColor: getDiseaseColor(index),
-                                padding: '4px 8px',
-                                borderRadius: '16px',
-                                fontSize: '0.7rem'
-                              }}
-                            >
-                              {tag}
-                            </span>
-                          );
-                        })}
-                        {bookmark.diseaseTags.length > 3 && (
-                          <span className={styles.moreTags}>
-                            +{bookmark.diseaseTags.length - 3} อื่นๆ
-                          </span>
-                        )}
-                      </div>
+                  <div className={styles.cardContent}>
+                    <h3 className={styles.cardTitle}>{bookmark.title}</h3>
+                    
+                    {bookmark.description && (
+                      <p className={styles.cardDescription}>
+                        {bookmark.description.length > 100 
+                          ? `${bookmark.description.substring(0, 100)}...` 
+                          : bookmark.description}
+                      </p>
                     )}
                     
-                    {/* Meal Tags */}
-                    {bookmark.mealName && (
-                      <div className={styles.mealTagsSection}>
-                        <span className={styles.sectionLabel}>มื้อ:</span>
-                        {bookmark.mealName.split(',').map((mealName) => {
-                          const mealNameTrimmed = mealName.trim();
-                          
-                          // ใช้ mealTypes เหมือนหน้าหลัก
-                          const mealTypes = [
-                            { id: 'breakfast', name: 'มื้อเช้า', color: '#FEF08A' },
-                            { id: 'lunch', name: 'มื้อกลางวัน', color: '#BBF7D0' },
-                            { id: 'dinner', name: 'มื้อเย็น', color: '#DDD6FE' }
-                          ];
-                          
-                          // หา meal type ที่ตรงกัน
-                          const m = mealTypes.find(x => 
-                            x.id === mealNameTrimmed || 
-                            x.name === mealNameTrimmed ||
-                            (mealNameTrimmed === 'breakfast' && x.id === 'breakfast') ||
-                            (mealNameTrimmed === 'lunch' && x.id === 'lunch') ||
-                            (mealNameTrimmed === 'dinner' && x.id === 'dinner')
-                          );
-
-                          return (
-                            <span
-                              key={`meal-${mealNameTrimmed}`}
-                              className={styles.mealTag}
-                              style={{
-                                background: m?.color || '#48bb78',
-                                color: '#000000',
-                                borderColor: m?.color || '#48bb78',
-                                padding: '0.15rem 0.5rem',
-                                borderRadius: '8px',
-                                fontSize: '0.7rem'
-                              }}
-                              title={m?.name}
-                            >
-                              {m?.name || mealNameTrimmed}
+                    <div className={styles.cardTags}>
+                      {/* Disease Tags */}
+                      {bookmark.diseaseTags.length > 0 && (
+                        <div className={styles.diseaseTagsSection}>
+                          <span className={styles.sectionLabel}>โรค:</span>
+                          {bookmark.diseaseTags.slice(0, 3).map((tag, index) => {
+                            const diseasePalette = ['#FFB6C1', '#ADD8E6', '#FFD700', '#98FB98', '#DDA0DD', '#F0E68C', '#CDE7FF', '#FECACA', '#DCFCE7', '#E9D5FF'];
+                            const getDiseaseColor = (id) => diseasePalette[(Number(id) || 0) % diseasePalette.length];
+                            return (
+                              <span
+                                key={index}
+                                className={styles.diseaseTag}
+                                style={{
+                                  backgroundColor: getDiseaseColor(index),
+                                  color: '#000000',
+                                  borderColor: getDiseaseColor(index),
+                                  padding: '4px 8px',
+                                  borderRadius: '16px',
+                                  fontSize: '0.7rem'
+                                }}
+                              >
+                                {tag}
+                              </span>
+                            );
+                          })}
+                          {bookmark.diseaseTags.length > 3 && (
+                            <span className={styles.moreTags}>
+                              +{bookmark.diseaseTags.length - 3} อื่นๆ
                             </span>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* Meal Tags */}
+                      {bookmark.mealName && (
+                        <div className={styles.mealTagsSection}>
+                          <span className={styles.sectionLabel}>มื้อ:</span>
+                          {bookmark.mealName.split(',').map((mealName) => {
+                            const mealNameTrimmed = mealName.trim();
+                            
+                            // ใช้ mealTypes เหมือนหน้าหลัก
+                            const mealTypes = [
+                              { id: 'breakfast', name: 'มื้อเช้า', color: '#FEF08A' },
+                              { id: 'lunch', name: 'มื้อกลางวัน', color: '#BBF7D0' },
+                              { id: 'dinner', name: 'มื้อเย็น', color: '#DDD6FE' }
+                            ];
+                            
+                            // หา meal type ที่ตรงกัน
+                            const m = mealTypes.find(x => 
+                              x.id === mealNameTrimmed || 
+                              x.name === mealNameTrimmed ||
+                              (mealNameTrimmed === 'breakfast' && x.id === 'breakfast') ||
+                              (mealNameTrimmed === 'lunch' && x.id === 'lunch') ||
+                              (mealNameTrimmed === 'dinner' && x.id === 'dinner')
+                            );
 
-                  <button
-                    onClick={() => handleRemoveBookmark(bookmark.recipeId)}
-                    className={styles.removeBtn}
-                    title="ลบออกจากบุ๊กมาร์ก"
-                  >
-                    <FaTimes /> ลบ
-                  </button>
-                </div>
+                            return (
+                              <span
+                                key={`meal-${mealNameTrimmed}`}
+                                className={styles.mealTag}
+                                style={{
+                                  background: m?.color || '#48bb78',
+                                  color: '#000000',
+                                  borderColor: m?.color || '#48bb78',
+                                  padding: '0.15rem 0.5rem',
+                                  borderRadius: '8px',
+                                  fontSize: '0.7rem'
+                                }}
+                                title={m?.name}
+                              >
+                                {m?.name || mealNameTrimmed}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </Link>
               </div>
             ))}
           </div>

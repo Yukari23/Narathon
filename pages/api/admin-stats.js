@@ -53,8 +53,7 @@ export default async function handler(req, res) {
           First_name       AS name,
           Email_member     AS email,
           Image            AS image,
-          Disease_tags     AS diseaseTags,
-          comment
+          Disease_tags     AS diseaseTags
         FROM members
         ORDER BY Email_member DESC
         LIMIT 5
@@ -98,8 +97,7 @@ export default async function handler(req, res) {
       image: u.image || '/images/GF3.jpg',
       diseaseTags: u.diseaseTags
         ? String(u.diseaseTags).split(',').map(t => t.trim()).filter(Boolean)
-        : [],
-      comment: u.comment || ''
+        : []
     }));
 
     // ===== แปลงข้อมูล recent recipes =====

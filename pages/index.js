@@ -638,6 +638,17 @@ const getUniqueDiseaseTags = (recipe, diseaseCategories) => {
         </span>
       ))}
     </div>
+    <button 
+      type="button" 
+      className={styles.clearFiltersMainBtn} 
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        clearFilters(e);
+      }}
+    >
+      <FaTimes /> ล้างตัวกรอง
+    </button>
   </div>
 )}
       </section>
@@ -989,7 +1000,12 @@ const getUniqueDiseaseTags = (recipe, diseaseCategories) => {
         <div className={styles.popupOverlay} role="dialog" aria-modal>
           <div className={styles.popup}>
             <div className={styles.popupHeader}>
-              <h3>เลือกตามมื้ออาหาร (สามารถเลือกหลายมื้อได้)</h3>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.2rem' }}>เลือกตามมื้ออาหาร</h3>
+                <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#64748b' }}>
+                  เลือกตามมื้ออาหารเพื่อแยกหารเมนูที่ใช่สำหรับคุณ
+                </p>
+              </div>
               <button className={styles.closeBtn} onClick={()=>setShowMealPopup(false)} aria-label="ปิด"><FaTimes/></button>
             </div>
             <div className={styles.popupContent}>
